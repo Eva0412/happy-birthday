@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>Математика в клетку</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Rubik:wght@500;600;700&display=swap">
+<style>
+/* Layout: one column like a school notebook page: topic picker on top, the "тетрадь" card with the current problem below. */
+:root{
+  --paper:#fbfcff; --grid:#dfe7f3; --ink:#1f2a44; --ink-soft:#5b6782;
+  --pen:#2350c8; --pen-soft:#e7eefc; --red:#d4352b; --red-soft:#fdecea;
+  --green:#18875a; --green-soft:#e3f5ec; --amber:#a86500; --amber-soft:#fff3dc;
+  --card:#ffffff; --line:#cfd8e8; --margin:#f2a3a0;
+  --c-eq:#2350c8; --c-eq-soft:#e7eefc; --c-ex:#0f8577; --c-ex-soft:#dcf3ef; --c-tk:#c2410c; --c-tk-soft:#fdeadf;
+  --gold:#e0a100; --cat-fur:#fffaf3; --cat-point:#e2c4a2; --cat-ear:#f3d6c8; --cat-eye:#5fb0ea; --cat-nose:#e9a3a0; --cat-line:#8a7462;
+  --f-ui:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-math:"Rubik","Nunito",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#131826; --grid:#1d2436; --ink:#e7ecf7; --ink-soft:#9aa6c0;
+  --pen:#8fb0ff; --pen-soft:#1f2b4d; --red:#ff8a80; --red-soft:#3a1f22;
+  --green:#5fd3a0; --green-soft:#16332a; --amber:#ffc46b; --amber-soft:#3a2d16;
+  --c-eq:#8fb0ff; --c-eq-soft:#1f2b4d; --c-ex:#5fd6c4; --c-ex-soft:#123631; --c-tk:#ff9e6b; --c-tk-soft:#3d2216;
+  --gold:#ffd04d; --cat-fur:#fffaf3; --cat-point:#e2c4a2; --cat-ear:#f3d6c8; --cat-eye:#6cbcf2; --cat-nose:#e9a3a0; --cat-line:#8a7462;
+  --card:#192033; --line:#2b3550; --margin:#7a3b3b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#131826; --grid:#1d2436; --ink:#e7ecf7; --ink-soft:#9aa6c0;
+  --pen:#8fb0ff; --pen-soft:#1f2b4d; --red:#ff8a80; --red-soft:#3a1f22;
+  --green:#5fd3a0; --green-soft:#16332a; --amber:#ffc46b; --amber-soft:#3a2d16;
+  --c-eq:#8fb0ff; --c-eq-soft:#1f2b4d; --c-ex:#5fd6c4; --c-ex-soft:#123631; --c-tk:#ff9e6b; --c-tk-soft:#3d2216;
+  --gold:#ffd04d; --cat-fur:#fffaf3; --cat-point:#e2c4a2; --cat-ear:#f3d6c8; --cat-eye:#6cbcf2; --cat-nose:#e9a3a0; --cat-line:#8a7462;
+  --card:#192033; --line:#2b3550; --margin:#7a3b3b; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body[data-sec="eq"]{--pen:var(--c-eq);--pen-soft:var(--c-eq-soft)}
+body[data-sec="ex"]{--pen:var(--c-ex);--pen-soft:var(--c-ex-soft)}
+body[data-sec="tk"]{--pen:var(--c-tk);--pen-soft:var(--c-tk-soft)}
+.hero{display:flex;gap:12px;align-items:flex-end}
+.owl{width:88px;height:88px;flex:none;transform-origin:50% 90%}
+.owl.hop{animation:hop .6s ease}
+.owl.shake{animation:tilt .6s ease}
+@keyframes hop{0%,100%{transform:none}35%{transform:translateY(-12px) rotate(-4deg)}65%{transform:translateY(0) rotate(3deg)}}
+@keyframes tilt{0%,100%{transform:none}30%{transform:rotate(-8deg)}60%{transform:rotate(6deg)}}
+.bubble{position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:16px 16px 16px 4px;padding:8px 12px;font-weight:700;font-size:.95rem;flex:1;min-width:0;margin-bottom:14px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-weight:800;font-size:.88rem}
+.chip .star{color:var(--gold);font-size:1.05rem}
+.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:6px;transition:width .4s}
+.medal{color:var(--gold);font-weight:800}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%}
+@media (prefers-reduced-motion:reduce){.owl.hop,.owl.shake{animation:none}}
+.stepno{font-size:.85rem;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px}
+.stepno b{color:var(--pen)}
+.sbar{height:5px;border-radius:5px;background:var(--line);overflow:hidden;display:block}
+.sbar i{display:block;height:100%;background:var(--pen)}
+.signs{display:inline-flex;gap:4px}
+.sg{min-width:40px;height:40px;border-radius:10px;border:2px solid var(--line);background:var(--paper);color:var(--pen);font:700 1.3rem var(--f-math);cursor:pointer}
+.sg.on{border-color:var(--pen);background:var(--pen-soft)}
+#buildform input{width:5.2ch}
+.note{font-size:.82rem;color:var(--ink-soft)}
+details.short{border:1.5px dashed var(--line);border-radius:12px;padding:8px 12px}
+details.short summary{font-weight:800;cursor:pointer;color:var(--pen)}
+details.short summary small{font-weight:600;color:var(--ink-soft)}
+.kzwrap{overflow-x:auto;margin-top:8px}
+table.kz{border-collapse:collapse;font-family:var(--f-math);font-size:.95rem;color:var(--pen)}
+table.kz th,table.kz td{border:1px solid var(--line);padding:4px 8px;text-align:center;white-space:nowrap}
+table.kz thead th{font-family:var(--f-ui);font-size:.8rem;color:var(--ink-soft)}
+table.kz tbody th{text-align:left;font-weight:600}
+.kzlines div{white-space:pre-wrap}
+.solution.tk ol{list-style:none;padding-left:0}
+.kzlines{font-family:var(--f-math);color:var(--pen);margin-top:6px;display:flex;flex-direction:column;gap:2px}
+.dots{display:flex;gap:5px;align-items:center}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);display:block}
+.dots i.cur{border-color:var(--pen)}
+.dots i.ok{background:var(--gold);border-color:var(--gold)}
+.dots i.meh{background:var(--pen-soft);border-color:var(--pen)}
+.tag{display:inline-block;align-self:flex-start;background:var(--amber-soft);color:var(--amber);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:800}
+.mode{align-self:flex-start}
+.mode button.locked{opacity:.65}
+.btn:disabled{opacity:.55;cursor:wait}
+.bowl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:.92rem}
+.fish{letter-spacing:2px;font-size:1.05rem}
+.fish .off{opacity:.22;filter:grayscale(1)}
+.btn.feed{padding:7px 12px;font-size:.9rem;background:var(--gold);color:#3a2a00}
+.btn.feed.empty{opacity:.5}
+.yum{position:fixed;font-size:2rem;pointer-events:none;z-index:60;transition:transform .7s ease-in,opacity .7s ease-in}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:17px;line-height:1.45;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;}
+.wrap{max-width:640px;margin:0 auto;padding-block:14px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px}
+header h1{font-family:var(--f-math);font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:2px 0 0;color:var(--ink-soft);font-size:.92rem}
+.score{font-family:var(--f-math);color:var(--pen);font-weight:600}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px}
+.tabs button{border:0;background:transparent;color:var(--ink-soft);font:700 1rem var(--f-ui);padding:10px 4px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--pen);color:var(--card)}
+.topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+@media (max-width:520px){.topics{grid-template-columns:repeat(2,minmax(0,1fr))}.topic span{display:none}.topic{padding:8px 10px}}
+.topic{text-align:left;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:9px 11px;cursor:pointer;font-family:var(--f-ui);display:flex;flex-direction:column;gap:1px;min-width:0}
+.topic b{font-size:.95rem}
+.topic span{font-family:var(--f-math);font-size:.85rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topic small{font-size:.78rem;color:var(--green);font-weight:700;min-height:1em}
+.topic[aria-pressed="true"]{border-color:var(--pen);box-shadow:0 0 0 2px var(--pen-soft) inset;background:var(--pen-soft)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;top:0;bottom:0;left:38px;width:2px;background:var(--margin);opacity:.7}
+.card-in{padding:14px 14px 16px 52px;display:flex;flex-direction:column;gap:12px}
+.task-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.task-head .lbl{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:800}
+.mode{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:3px}
+.mode button{border:0;background:transparent;color:var(--ink-soft);font:700 .82rem var(--f-ui);padding:5px 9px;border-radius:7px;cursor:pointer}
+.mode button[aria-pressed="true"]{background:var(--card);color:var(--pen);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.problem{font-family:var(--f-math);font-size:1.75rem;font-weight:600;color:var(--ink);letter-spacing:.01em;overflow-wrap:anywhere}
+.statement{font-size:1.05rem;line-height:1.5}
+.statement .q{display:block;margin-top:6px;font-weight:800}
+.notebook{display:flex;flex-direction:column;gap:2px;font-family:var(--f-math);font-size:1.25rem;color:var(--pen);font-weight:500}
+.notebook:empty{display:none}
+.notebook div{animation:write .35s ease-out}
+.notebook .small{font-size:1.02rem}
+.notebook .ans{color:var(--ink);font-weight:700;margin-top:4px}
+.notebook .chk{font-size:.98rem;color:var(--green);font-family:var(--f-ui);font-weight:700}
+@keyframes write{from{opacity:.2;transform:translateX(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.notebook div{animation:none}}
+.step{border-top:1.5px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.step .prompt{font-weight:700}
+.step .prompt .m{font-family:var(--f-math);color:var(--pen);white-space:nowrap}
+.opts{display:grid;gap:8px}
+.opt{border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:12px;padding:10px 12px;text-align:left;cursor:pointer;font:600 1rem var(--f-ui)}
+.opt .e{display:block;font-family:var(--f-math);font-size:1.15rem;color:var(--pen);margin-top:2px}
+.opt.bad{border-color:var(--red);background:var(--red-soft);opacity:.75;cursor:default}
+.opt.good{border-color:var(--green);background:var(--green-soft)}
+.opgrid{grid-template-columns:repeat(2,1fr)}
+.opgrid .opt{text-align:center;font-family:var(--f-math);font-size:1.25rem;color:var(--pen)}
+.pickexpr{font-family:var(--f-math);font-size:1.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:2px;line-height:1.9}
+.pickexpr .opb{font:700 1.5rem var(--f-math);min-width:44px;height:44px;border-radius:10px;border:2px solid var(--pen);background:var(--pen-soft);color:var(--pen);cursor:pointer;margin:0 3px}
+.pickexpr .opb.bad{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+.pickexpr .opb.good{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+.inrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--f-math);font-size:1.35rem}
+.inrow input{width:6.2ch;font:600 1.35rem var(--f-math);padding:6px 8px;border-radius:10px;border:2px solid var(--pen);background:var(--paper);color:var(--ink);text-align:center}
+.inrow input:focus-visible{outline:3px solid var(--pen-soft);outline-offset:1px}
+.inrow input.bad{border-color:var(--red)}
+.btn{border:0;border-radius:12px;padding:11px 16px;font:800 1rem var(--f-ui);cursor:pointer;background:var(--pen);color:var(--card)}
+.btn.ghost{background:transparent;color:var(--pen);border:1.5px solid var(--line)}
+.btn:focus-visible,.opt:focus-visible,.topic:focus-visible,.tabs button:focus-visible,.opb:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.fb{border-radius:12px;padding:10px 12px;font-size:.98rem;line-height:1.45}
+.fb.bad{background:var(--red-soft);color:var(--ink);border-left:4px solid var(--red)}
+.fb.good{background:var(--green-soft);color:var(--ink);border-left:4px solid var(--green)}
+.fb.hint{background:var(--amber-soft);color:var(--ink);border-left:4px solid var(--amber)}
+.fb .rule{display:block;margin-top:6px;font-weight:700}
+.fb .m{font-family:var(--f-math);white-space:nowrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .btn{flex:1 1 auto}
+.done{display:flex;flex-direction:column;gap:10px}
+.done .cheer{font-family:var(--f-math);font-size:1.3rem;color:var(--green);font-weight:700}
+.solution{display:flex;flex-direction:column;gap:8px}
+.solution ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px}
+.solution .lines{font-family:var(--f-math);color:var(--pen);font-size:1.1rem}
+details.rules{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+details.rules summary{font-weight:800;cursor:pointer}
+details.rules ul{padding-left:1.1em;margin:8px 0 0;display:flex;flex-direction:column;gap:6px}
+details.rules .m{font-family:var(--f-math);color:var(--pen)}
+.foot{color:var(--ink-soft);font-size:.82rem;text-align:center}
+.foot button{background:none;border:0;color:var(--ink-soft);text-decoration:underline;font:inherit;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Математика в клетку</h1>
+    <div class="hero">
+      <svg class="owl" id="owl" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M78 86 Q99 82 95 62 Q93 52 86 54" stroke="var(--cat-point)" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <g id="catBody"><ellipse cx="50" cy="75" rx="33" ry="22" fill="var(--cat-fur)" stroke="var(--cat-line)" stroke-width="1.5"/></g>
+        <ellipse cx="38" cy="95" rx="7.5" ry="4" fill="var(--cat-point)"/><ellipse cx="62" cy="95" rx="7.5" ry="4" fill="var(--cat-point)"/>
+        <path d="M30 40 L19 5 L47 26 Z" fill="var(--cat-point)" stroke="var(--cat-line)" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M70 40 L81 5 L53 26 Z" fill="var(--cat-point)" stroke="var(--cat-line)" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M31 33 L24 13 L41 27 Z" fill="var(--cat-ear)"/><path d="M69 33 L76 13 L59 27 Z" fill="var(--cat-ear)"/>
+        <path d="M27 36 Q29 22 50 22 Q71 22 73 36 Q71 53 50 63 Q29 53 27 36 Z" fill="var(--cat-fur)" stroke="var(--cat-line)" stroke-width="1.5"/>
+        <path d="M40 45 Q50 39 60 45 Q58 57 50 61 Q42 57 40 45 Z" fill="var(--cat-point)" opacity=".55"/>
+        <path d="M31 40 Q39 28 48 36 Q41 44 31 40 Z" fill="var(--cat-eye)" stroke="var(--cat-line)" stroke-width="1"/>
+        <path d="M69 40 Q61 28 52 36 Q59 44 69 40 Z" fill="var(--cat-eye)" stroke="var(--cat-line)" stroke-width="1"/>
+        <ellipse cx="40" cy="37.6" rx="1.8" ry="3.8" fill="#1b2433"/><ellipse cx="60" cy="37.6" rx="1.8" ry="3.8" fill="#1b2433"/>
+        <circle cx="42" cy="35.2" r="1.3" fill="#fff"/><circle cx="62" cy="35.2" r="1.3" fill="#fff"/>
+        <path d="M47.3 48 L52.7 48 L50 51.2 Z" fill="var(--cat-nose)"/>
+        <path d="M50 51 Q48.5 54 46 53 M50 51 Q51.5 54 54 53" stroke="var(--cat-line)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <path d="M44 50 L29 47 M44 52.5 L30 55 M56 50 L71 47 M56 52.5 L70 55" stroke="var(--cat-line)" stroke-width=".8" opacity=".55" stroke-linecap="round"/>
+      </svg>
+      <div class="bubble" id="say">Мяу! Я Жир. Решай задания, а за каждое решение без ошибок получишь корм ★ — покорми меня!</div>
+    </div>
+    <div class="stats">
+      <span class="chip"><span class="star">★</span> Корм: <span id="food">0</span></span>
+      <span class="chip">Подряд: <span id="streak">0</span></span>
+      <span class="chip">Рекорд: <span id="best">0</span></span>
+    </div>
+    <div class="bowl"><span>Сытость Жира:</span><span class="fish" id="full" aria-label="сытость"></span><button class="btn feed" type="button" id="feed">Покормить 🐟 ★1</button></div>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="eq" id="tab-eq">Уравнения</button>
+    <button role="tab" data-tab="ex" id="tab-ex">Примеры</button>
+    <button role="tab" data-tab="tk" id="tab-tk">Задачи</button>
+  </div>
+
+  <div class="topics" id="topics"></div>
+
+  <section class="card" aria-live="polite">
+    <div class="card-in" id="card"></div>
+  </section>
+
+  <details class="rules" id="rules"><summary>Шпаргалка: правила</summary><div id="rulesBody"></div></details>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <p class="foot">Задания каждый раз новые. За каждое решение без ошибок и без разбора — корм ★ для Жира. 5 решений без ошибок в теме — медаль. Жир потихоньку голодает: заходи порешать, чтобы покормить. <button id="reset" type="button">Сбросить счёт</button></p>
+</div>
+
+<script>
+/* ================= ЯДРО: числа, выражения, проверки ================= */
+const SYM={'+':'+','-':'−','*':'·',':':':'};
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const isNat=v=>Number.isInteger(v)&&v>0;
+function calc(a,op,b){return op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:a/b;}
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const plural=(n,f)=>{const a=n%10,b=n%100;return n+' '+(a===1&&b!==11?f[0]:a>=2&&a<=4&&(b<12||b>14)?f[1]:f[2]);};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* Пошаговый счёт одного действия с разбором типичных ошибок */
+function calcHint(a,op,b){
+  if(op==='+') return a<10&&b<10?`Можно досчитать от ${Math.max(a,b)} ещё ${Math.min(a,b)}.`:`Складывай по разрядам: сначала единицы, потом десятки, потом сотни.`;
+  if(op==='-') return `Проверь себя сложением: если к твоему ответу прибавить ${b}, должно получиться ${a}.`;
+  if(op==='*'){
+    let [p,q]=a>=b?[a,b]:[b,a];
+    if(p>=10&&q<10&&p%10!==0) return `Разбей на части: ${p} · ${q} = ${p-p%10} · ${q} + ${p%10} · ${q}.`;
+    if(p>=10&&q<10) return `${p} · ${q}: сначала ${p/10} · ${q}, а потом припиши нолик.`;
+    if(p>=10) return `Умножь столбиком или разбей одно число на десятки и единицы.`;
+    return `Вспомни таблицу умножения на ${q}.`;
+  }
+  return `Подумай, какое число нужно умножить на ${b}, чтобы получилось ${a}.`;
+}
+function calcStep(a,op,b,opt={}){
+  const v=calc(a,op,b), diag=[];
+  const opp={'+':'-','-':'+','*':':',':':'*'}[op];
+  const w=calc(a,opp,b);
+  const need={'+':'сложить','-':'вычесть','*':'умножить',':':'разделить'}[op];
+  if(isNat(w)&&w!==v) diag.push({v:w,msg:`Похоже, получилось другое действие. Здесь нужно ${need}: <span class="m">${a} ${SYM[op]} ${b}</span>.`});
+  return {kind:'num',pre:opt.pre??`${a} ${SYM[op]} ${b} =`,post:opt.post||'',value:v,diag,
+    hint:calcHint(a,op,b),after:opt.after||[],explain:opt.explain||'',good:opt.good||''};
+}
+
+/* Один шаг = одна строчка с одним окошком. */
+function lineStep({q,pre,post='',value,diag=[],h1,h2,after,explain}){
+  return {kind:'num',q,pre,post,value,diag,h1,h2,after,explain};
+}
+function opDiag(a,op,b,v){ // типичная ошибка: другое действие
+  const d=[]; const opp={'+':'-','-':'+','*':':',':':'*'}[op]; const w=calc(a,opp,b);
+  const need={'+':'сложить','-':'вычесть','*':'умножить',':':'разделить'}[op];
+  if(isNat(w)&&w!==v) d.push({v:w,msg:`Похоже, сделано другое действие. Здесь нужно ${need}: <span class="m">${a} ${SYM[op]} ${b}</span>.`});
+  return d;
+}
+/* ---------- Уравнения: дерево выражения ---------- */
+const X={t:'x'}, N=v=>({t:'n',v}), KX=k=>({t:'kx',k}), LIKE=terms=>({t:'like',terms}), OP=(op,a,b)=>({t:'op',op,a,b});
+const hasX=n=>n.t==='x'||n.t==='kx'||n.t==='like'||(n.t==='op'&&(hasX(n.a)||hasX(n.b)));
+function val(n,x){switch(n.t){case'x':return x;case'n':return n.v;case'kx':return n.k*x;
+  case'like':return n.terms.reduce((s,t)=>s+t.s*t.k*x,0);case'op':return calc(val(n.a,x),n.op,val(n.b,x));}}
+function okTree(n,x){ // все промежуточные значения натуральные
+  if(n.t==='like'){let s=0;for(const t of n.terms){s+=t.s*t.k*x;if(s<=0)return false;}return true;}
+  if(n.t==='op')return okTree(n.a,x)&&okTree(n.b,x)&&isNat(val(n,x));
+  return isNat(val(n,x));
+}
+const kxs=(k,sub)=>sub===undefined?(k===1?'x':k+'x'):(k===1?String(sub):k+' · '+sub);
+function fmt(n,sub){
+  switch(n.t){
+    case'x':return sub===undefined?'x':String(sub);
+    case'n':return String(n.v);
+    case'kx':return kxs(n.k,sub);
+    case'like':return n.terms.map((t,i)=>(i===0?(t.s<0?'−':''):(t.s<0?' − ':' + '))+kxs(t.k,sub)).join('');
+    case'op':{
+      let a=fmt(n.a,sub),b=fmt(n.b,sub);
+      const low=c=>(c.t==='op'&&(c.op==='+'||c.op==='-'))||c.t==='like';
+      const mul=n.op==='*'||n.op===':';
+      if(mul&&low(n.a))a='('+a+')';
+      if(mul&&(low(n.b)||n.b.t==='op'))b='('+b+')';
+      if(n.op==='-'&&low(n.b))b='('+b+')';
+      return a+' '+SYM[n.op]+' '+b;
+    }}
+}
+const findLike=n=>n.t==='like'?n:n.t==='op'?(findLike(n.a)||findLike(n.b)):null;
+const likeSum=l=>l.terms.reduce((s,t)=>s+t.s*t.k,0);
+const replaceLike=n=>n.t==='like'?KX(likeSum(n)):n.t==='op'?OP(n.op,replaceLike(n.a),replaceLike(n.b)):n;
+
+const ROLE={
+  'слагаемое':{adj:'неизвестное',rule:'Чтобы найти неизвестное слагаемое, надо из суммы вычесть известное слагаемое.'},
+  'уменьшаемое':{adj:'неизвестное',rule:'Чтобы найти неизвестное уменьшаемое, надо к разности прибавить вычитаемое.'},
+  'вычитаемое':{adj:'неизвестное',rule:'Чтобы найти неизвестное вычитаемое, надо из уменьшаемого вычесть разность.'},
+  'множитель':{adj:'неизвестный',rule:'Чтобы найти неизвестный множитель, надо произведение разделить на известный множитель.'},
+  'делимое':{adj:'неизвестное',rule:'Чтобы найти неизвестное делимое, надо частное умножить на делитель.'},
+  'делитель':{adj:'неизвестный',rule:'Чтобы найти неизвестный делитель, надо делимое разделить на частное.'}
+};
+const ruleTail=r=>ROLE[r].rule.split('надо ')[1].replace(/\.$/,'');
+const DISTRACT={
+  'слагаемое':[['уменьшаемое','r+c'],['вычитаемое','c-r']],
+  'уменьшаемое':[['слагаемое','r-c'],['вычитаемое','c-r']],
+  'вычитаемое':[['уменьшаемое','r+c'],['слагаемое','r-c']],
+  'множитель':[['делимое','r*c'],['делитель','c:r']],
+  'делимое':[['множитель','r:c'],['делитель','c:r']],
+  'делитель':[['делимое','r*c'],['множитель','r:c']]
+};
+const CORRECT={'слагаемое':'r-c','уменьшаемое':'r+c','вычитаемое':'c-r','множитель':'r:c','делимое':'r*c','делитель':'c:r'};
+function exprOf(code,r,c){const a=code[0]==='r'?r:c,b=code[2]==='r'?r:c,op=code[1];return {a,op,b,v:calc(a,op,b),s:`${a} ${SYM[op]} ${b}`};}
+
+function buildEquation(left,right,x){
+  const steps=[]; let cur=left, r=right;
+  const line=(L,R)=>`${fmt(L)} = ${R}`;
+  const lk=findLike(cur);
+  if(lk){
+    const k=likeSum(lk), ls=fmt(lk);
+    const nums=lk.terms.map((t,i)=>(i===0?'':(t.s<0?' − ':' + '))+t.k).join('');
+    const diag=[];
+    const allPlus=lk.terms.reduce((s,t)=>s+t.k,0);
+    if(lk.terms.some(t=>t.s<0)&&allPlus!==k) diag.push({v:allPlus,msg:`Обрати внимание на знак «−»: эти x нужно <b>вычесть</b>, а не прибавить.`});
+    if(lk.terms.some(t=>t.k===1)){const ign=lk.terms.reduce((s,t)=>s+(t.k===1?0:t.s*t.k),0);
+      if(ign!==k) diag.push({v:ign,msg:`Буква x без числа — это <b>1x</b>. Её тоже надо посчитать: <span class="m">6x − x = 6x − 1x = 5x</span>.`});}
+    const prod=lk.terms.reduce((s,t)=>s*t.k,1);
+    if(prod!==k&&lk.terms.length>1) diag.push({v:prod,msg:`Числа перед x не умножают. x-ы складывают или вычитают, как одинаковые предметы.`});
+    cur=replaceLike(cur);
+    const full=line(cur,r), [pre,post]=full.replace(/\d*x/,'□x').split('□');
+    steps.push(lineStep({q:'Упрости левую часть: сколько всего x?',pre,post,value:k,diag,
+      h1:'x-ы складывают и вычитают, как одинаковые предметы (3 яблока + 2 яблока = 5 яблок). Буква x без числа — это 1x.',
+      h2:`Посчитай: <span class="m">${nums}</span>.`,
+      explain:`Упрощаем левую часть: <span class="m">${ls} = (${nums})x = ${kxs(k)}</span>.`,
+      after:[full]}));
+  }
+  let guard=0;
+  while(cur.t!=='x'&&guard++<10){
+    let L,c,role,comps; const eqLine=line(cur,r);
+    if(cur.t==='kx'){
+      L=X;c=cur.k;role='множитель';
+      comps=`<span class="m">${kxs(cur.k)}</span> — это <span class="m">${cur.k} · x</span>: ${cur.k} и x — множители, ${r} — произведение.`;
+    }else{
+      const xa=hasX(cur.a); L=xa?cur.a:cur.b; c=(xa?cur.b:cur.a).v;
+      const Ls=fmt(L), op=cur.op;
+      if(op==='+'){role='слагаемое';comps=`<span class="m">${xa?Ls:c}</span> и <span class="m">${xa?c:Ls}</span> — слагаемые, ${r} — сумма.`;}
+      else if(op==='-'&&xa){role='уменьшаемое';comps=`<span class="m">${Ls}</span> — уменьшаемое, ${c} — вычитаемое, ${r} — разность.`;}
+      else if(op==='-'){role='вычитаемое';comps=`${c} — уменьшаемое, <span class="m">${Ls}</span> — вычитаемое, ${r} — разность.`;}
+      else if(op==='*'){role='множитель';comps=`<span class="m">${xa?Ls:c}</span> и <span class="m">${xa?c:Ls}</span> — множители, ${r} — произведение.`;}
+      else if(xa){role='делимое';comps=`<span class="m">${Ls}</span> — делимое, ${c} — делитель, ${r} — частное.`;}
+      else {role='делитель';comps=`${c} — делимое, <span class="m">${Ls}</span> — делитель, ${r} — частное.`;}
+    }
+    const Ls=fmt(L), R=ROLE[role], ce=exprOf(CORRECT[role],r,c);
+    const diag=[];
+    for(const [dr,code] of DISTRACT[role]){const ex=exprOf(code,r,c);
+      if(isNat(ex.v)&&ex.v!==ce.v&&!diag.some(d=>d.v===ex.v)) diag.push({v:ex.v,msg:`Похоже, посчитано <span class="m">${ex.s}</span>, а это другое правило. Здесь «<span class="m">${Ls}</span>» — ${R.adj} ${role}. ${R.rule}`});}
+    steps.push(lineStep({q:`Найди «${Ls}». Какое число?`,pre:`${Ls} =`,value:ce.v,diag,
+      h1:`Смотри на строчку <span class="m">${eqLine}</span>. ${comps} ${R.rule}`,
+      h2:`Значит, считаем <span class="m">${Ls} = ${ce.s}</span>.`,
+      explain:`<span class="m">${eqLine}</span>: ${comps} ${R.rule} <span class="m">${Ls} = ${ce.s} = ${ce.v}</span>.`,
+      after:[`${Ls} = ${ce.s}`,`${Ls} = ${ce.v}`]}));
+    cur=L; r=ce.v;
+  }
+  if(r!==x) throw new Error('bad solve');
+  const sub=fmt(left,x);
+  steps.push(lineStep({q:`Проверка: подставь x = ${x} в левую часть и посчитай.`,pre:`${sub} =`,value:right,
+    h1:'Вместо x пишем найденное число. Сначала скобки, потом умножение и деление, потом сложение и вычитание.',
+    h2:`Если x найден верно, должно получиться ${right} — как в правой части.`,
+    explain:`Проверка: <span class="m">${sub} = ${right}</span> — как в правой части, значит, ответ верный.`,
+    after:[`<span class="small">Проверка: ${sub} = ${right} ✓</span>`]}));
+  return {type:'eq',display:`${fmt(left)} = ${right}`,steps,answer:x,ansPre:'x =',
+    answerLine:`Ответ: x = ${x}`,
+    checkLine:`Проверка: ${sub} = ${val(left,x)}, ${val(left,x)} = ${right} ✓`,
+    quickWrong:(g)=>{const lv=val(left,g);
+      if(!Number.isInteger(lv)||lv<0) return `Проверим: подставим x = ${g}. <span class="m">${fmt(left,g)}</span> — так нацело не посчитать. Значит, x = ${g} не подходит. Попробуй ещё раз или реши по шагам.`;
+      return `Проверим: подставим x = ${g}. <span class="m">${fmt(left,g)} = ${lv}</span>, а справа ${right}. ${lv} ≠ ${right}, значит x = ${g} не подходит. Попробуй ещё раз или реши по шагам.`;}};
+}
+
+/* Генераторы уравнений по уровням. Сначала выбираем ответ x, потом строим уравнение. */
+const EQ_LEVELS=[
+ {name:'Сложение и вычитание',ex:'x + 25 = 61, 84 − x = 39',gens:[
+  ()=>{const x=rnd(5,90),a=rnd(3,90);return [OP('+',X,N(a)),x];},
+  ()=>{const x=rnd(5,90),a=rnd(3,90);return [OP('+',N(a),X),x];},
+  ()=>{const x=rnd(12,99),a=rnd(2,x-2);return [OP('-',X,N(a)),x];},
+  ()=>{const a=rnd(20,99),x=rnd(2,a-2);return [OP('-',N(a),X),x];},
+  ()=>{const x=rnd(110,600),a=rnd(15,300);return [OP(pick(['+','-']),X,N(a)),x];}]},
+ {name:'Умножение и деление',ex:'7x = 56, x : 4 = 9, 72 : x = 8',gens:[
+  ()=>{const x=rnd(2,12),k=rnd(2,9);return [KX(k),x];},
+  ()=>{const x=rnd(2,12),k=rnd(2,9);return [OP('*',X,N(k)),x];},
+  ()=>{const x=rnd(2,12),k=rnd(2,9);return [OP('*',N(k),X),x];},
+  ()=>{const k=rnd(2,9),q=rnd(2,12);return [OP(':',X,N(k)),k*q];},
+  ()=>{const x=rnd(2,9),q=rnd(2,12);return [OP(':',N(x*q),X),x];},
+  ()=>{const x=rnd(11,40),k=rnd(2,6);return [KX(k),x];}]},
+ {name:'В два действия',ex:'3x + 7 = 25, 50 − 4x = 18',gens:[
+  ()=>{const x=rnd(2,15),k=rnd(2,9),a=rnd(2,50);return [OP('+',KX(k),N(a)),x];},
+  ()=>{const x=rnd(2,15),k=rnd(2,9),a=rnd(1,k*x-1);return [OP('-',KX(k),N(a)),x];},
+  ()=>{const x=rnd(2,15),k=rnd(2,9),a=rnd(2,50);return [OP('+',N(a),KX(k)),x];},
+  ()=>{const x=rnd(2,12),k=rnd(2,9),a=k*x+rnd(2,40);return [OP('-',N(a),KX(k)),x];},
+  ()=>{const k=rnd(2,9),q=rnd(2,12),a=rnd(2,30);return [OP('+',OP(':',X,N(k)),N(a)),k*q];},
+  ()=>{const k=rnd(2,9),q=rnd(3,15),a=rnd(1,q-1);return [OP('-',OP(':',X,N(k)),N(a)),k*q];}]},
+ {name:'Подобные слагаемые',ex:'3x + 2x = 40, 6x − x = 30',gens:[
+  ()=>{const x=rnd(2,15),a=rnd(2,9),b=rnd(2,9);return [LIKE([{s:1,k:a},{s:1,k:b}]),x];},
+  ()=>{const x=rnd(2,15),a=rnd(4,12),b=rnd(2,a-2);return [LIKE([{s:1,k:a},{s:-1,k:b}]),x];},
+  ()=>{const x=rnd(2,15),a=rnd(3,12);return [LIKE([{s:1,k:a},{s:-1,k:1}]),x];},
+  ()=>{const x=rnd(2,15),a=rnd(2,9);return [LIKE(pick([[{s:1,k:a},{s:1,k:1}],[{s:1,k:1},{s:1,k:a}]])),x];},
+  ()=>{const x=rnd(3,25),n=rnd(2,5);return [LIKE(Array.from({length:n},()=>({s:1,k:1}))),x];},
+  ()=>{const x=rnd(2,12),a=rnd(2,7),b=rnd(2,7),c=rnd(1,a+b-2);return [LIKE([{s:1,k:a},{s:1,k:b},{s:-1,k:c}]),x];}]},
+ {name:'Упрости и реши',ex:'6x − x + 18 = 48',gens:[
+  ()=>{const x=rnd(2,15),a=rnd(3,9),c=rnd(3,40);return [OP('+',LIKE([{s:1,k:a},{s:-1,k:1}]),N(c)),x];},
+  ()=>{const x=rnd(2,12),a=rnd(2,8),b=rnd(2,8),c=rnd(3,40);return [OP('+',LIKE([{s:1,k:a},{s:1,k:b}]),N(c)),x];},
+  ()=>{const x=rnd(2,12),a=rnd(4,11),b=rnd(1,a-2),k=a-b,c=rnd(1,k*x-1);return [OP('-',LIKE([{s:1,k:a},{s:-1,k:b}]),N(c)),x];},
+  ()=>{const x=rnd(2,12),a=rnd(2,8),c=rnd(3,40);return [OP('+',N(c),LIKE([{s:1,k:a},{s:1,k:1}])),x];},
+  ()=>{const x=rnd(2,12),a=rnd(2,6),b=rnd(2,6),k=a+b,c=rnd(1,k*x-1);return [OP('-',LIKE([{s:1,k:a},{s:1,k:b}]),N(c)),x];}]},
+ {name:'Со скобками',ex:'(x + 5) · 3 = 36, 90 − (x + 15) = 48',gens:[
+  ()=>{const x=rnd(2,20),a=rnd(2,20),k=rnd(2,9);return [OP('*',OP('+',X,N(a)),N(k)),x];},
+  ()=>{const a=rnd(2,20),x=a+rnd(2,15),k=rnd(2,9);return [OP('*',OP('-',X,N(a)),N(k)),x];},
+  ()=>{const x=rnd(2,20),a=rnd(2,20),k=rnd(2,9);return [OP('*',N(k),OP('+',X,N(a))),x];},
+  ()=>{const k=rnd(2,9),q=rnd(2,12),s=k*q,a=rnd(1,Math.max(1,s-2));return s-a>=1?[OP(':',OP('+',X,N(a)),N(k)),s-a]:null;},
+  ()=>{const k=rnd(2,9),q=rnd(2,12),a=rnd(2,30);return [OP(':',OP('-',X,N(a)),N(k)),k*q+a];},
+  ()=>{const x=rnd(5,40),b=rnd(5,30),a=x+b+rnd(5,40);return [OP('-',N(a),OP('+',X,N(b))),x];},
+  ()=>{const b=rnd(5,30),x=b+rnd(2,40),a=rnd(5,40);return [OP('+',OP('-',X,N(b)),N(a)),x];}]},
+ {name:'Вперемешку',ex:'все виды уравнений',mix:true}
+];
+function genEquation(li,src){
+  let real=src?src.li:li, lv=EQ_LEVELS[real];
+  if(!src&&lv.mix){real=rnd(0,EQ_LEVELS.length-2);lv=EQ_LEVELS[real];}
+  for(let t=0;t<500;t++){
+    const gi=src?src.gi:rnd(0,lv.gens.length-1);
+    const g=lv.gens[gi](); if(!g)continue;
+    const [left,x]=g; if(!isNat(x)||!okTree(left,x))continue;
+    const right=val(left,x); if(!isNat(right)||right>2000)continue;
+    const P=buildEquation(left,right,x); P.src={li:real,gi}; return P;
+  }
+  throw new Error('gen fail');
+}
+
+/* ---------- Примеры на порядок действий ---------- */
+function tokStr(t){return t.map(x=>typeof x==='number'?String(x):x==='('||x===')'||x==='□'?x:` ${SYM[x]} `).join('');}
+function group(t){ // самые внутренние скобки, если есть
+  let open=-1;
+  for(let i=0;i<t.length;i++){if(t[i]==='(')open=i;else if(t[i]===')')return [open+1,i-1];}
+  return [0,t.length-1];
+}
+function nextOp(t){const [s,e]=group(t);
+  for(let i=s;i<=e;i++)if(t[i]==='*'||t[i]===':')return i;
+  for(let i=s;i<=e;i++)if(t[i]==='+'||t[i]==='-')return i;
+  return -1;}
+function reduceAt(t,i){const v=calc(t[i-1],t[i],t[i+1]);const n=t.slice(0,i-1).concat([v],t.slice(i+2));const j=i-1;
+  if(n[j-1]==='('&&n[j+1]===')')n.splice(j-1,3,v);return {n,v};}
+function depthAt(t,i){let d=0;for(let k=0;k<i;k++){if(t[k]==='(')d++;else if(t[k]===')')d--;}return d;}
+function pickMsg(t,c,k){
+  const [s,e]=group(t), hasP=t.includes('(');
+  const hi=o=>o==='*'||o===':';
+  if(hasP&&(c<s||c>e)){
+    if(depthAt(t,c)>0) return 'Скобки выполняют первыми, но по порядку: начни со скобок, которые левее (или с тех, что внутри других скобок).';
+    return 'Сначала выполняют действие <b>в скобках</b>.';
+  }
+  if(!hi(t[c])&&hi(t[k])) return '<b>Умножение и деление</b> выполняют раньше, чем сложение и вычитание.';
+  return 'Действия одной ступени выполняют <b>по порядку, слева направо</b>. Посмотри: левее есть такое же действие.';
+}
+const EX_LEVELS=[
+ {name:'Два действия',ex:'45 + 6 · 7, 80 − 20 + 5',tpl:[
+  'a+b*c','a-b*c','a*b-c','a:b+c','a-b:c','a*b:c','a:b*c','a-b+c','a+b-c']},
+ {name:'Со скобками',ex:'(35 + 13) : 6, 90 − (24 + 36)',tpl:[
+  '(a+b)*c','a*(b-c)','(a-b):c','a-(b+c)','a:(b-c)','a-(b-c)','(a+b):c']},
+ {name:'Три-четыре действия',ex:'60 − 4 · 9 + 12',tpl:[
+  'a-b*c+d','a+b:c-d','(a+b)*c-d','a:(b-c)+d','a*b-c*d','a:b+c:d','(a-b):c*d','a+b*c-d']},
+ {name:'Скобки и много действий',ex:'(48 : 6 + 4) · 5 − 17',tpl:[
+  'a-(b+c*d)','(a+b):(c-d)','a*(b-c):d','(a*b-c):d+e','a+(b-c)*d:e','(a:b+c)*d-e','a-(b-c:d)*e']},
+ {name:'Вперемешку',ex:'все виды примеров',mix:true}
+];
+function parseTpl(s){const out=[];for(const ch of s){if('abcde'.includes(ch))out.push(ch);else out.push(ch);}return out;}
+function numFor(ch,first){ if(first) return Math.random()<.5?rnd(20,99):rnd(100,400); return Math.random()<.55?rnd(2,9):rnd(10,60);}
+function genExample(li,src){
+  let real=src?src.li:li, lv=EX_LEVELS[real];
+  if(!src&&lv.mix){real=rnd(0,EX_LEVELS.length-2);lv=EX_LEVELS[real];}
+  for(let tries=0;tries<20000;tries++){
+    const gi=src?src.gi:rnd(0,lv.tpl.length-1);
+    const tpl=parseTpl(lv.tpl[gi]);
+    let first=true;
+    const t=tpl.map(ch=>{if('abcde'.includes(ch)){const v=numFor(ch,first);first=false;return v;}return ch;});
+    // проверим весь ход решения
+    let cur=t.slice(), ok=true; const seq=[];
+    while(cur.length>1){const i=nextOp(cur);if(i<0){ok=false;break;}
+      const a=cur[i-1],op=cur[i],b=cur[i+1];
+      if(typeof a!=='number'||typeof b!=='number'){ok=false;break;}
+      const r=reduceAt(cur,i); if(!isNat(r.v)||r.v>999){ok=false;break;}
+      if(op===':'&&b===1){ok=false;break;}
+      if(op==='*'&&(a===1||b===1)){ok=false;break;}
+      seq.push({tokens:cur,i,a,op,b,v:r.v}); cur=r.n;}
+    if(!ok||cur.length!==1)continue;
+    const P=buildExample(t,seq,cur[0]); P.src={li:real,gi}; return P;
+  }
+  throw new Error('ex fail');
+}
+function buildExample(t,seq,ans){
+  const steps=[];
+  seq.forEach((s,idx)=>{
+    const tk=s.tokens, [gs,ge]=group(tk), inP=tk.includes('(')&&gs>0;
+    const hi=s.op==='*'||s.op===':';
+    const why=inP?'Сначала выполняют действие в скобках.':hi?'Умножение и деление выполняют раньше сложения и вычитания, по порядку слева направо.':'Сложение и вычитание выполняют по порядку слева направо.';
+    // строчка с окошком вместо результата
+    const m=tk.slice(0,s.i-1).concat(['□'],tk.slice(s.i+2)); const j=s.i-1;
+    if(m[j-1]==='('&&m[j+1]===')')m.splice(j-1,3,'□');
+    const [pre,post]=('= '+tokStr(m)).split('□');
+    const diag=opDiag(s.a,s.op,s.b,s.v);
+    for(let k=0;k<tk.length;k++){ // посчитано другое действие
+      if(k===s.i||!['+','-','*',':'].includes(tk[k])||typeof tk[k-1]!=='number'||typeof tk[k+1]!=='number')continue;
+      const w=calc(tk[k-1],tk[k],tk[k+1]);
+      if(isNat(w)&&w!==s.v&&!diag.some(d=>d.v===w)) diag.push({v:w,msg:`Похоже, сделано другое действие: <span class="m">${tk[k-1]} ${SYM[tk[k]]} ${tk[k+1]}</span>. ${why} Сейчас по порядку: <span class="m">${s.a} ${SYM[s.op]} ${s.b}</span>.`});
+    }
+    steps.push(lineStep({q:idx===0?'Сделай первое действие по порядку. Какое число встанет в окошко?':'Следующее действие по порядку:',pre,post,value:s.v,diag,
+      h1:why,h2:`Посчитай: <span class="m">${s.a} ${SYM[s.op]} ${s.b}</span>. ${calcHint(s.a,s.op,s.b)}`,
+      explain:`${idx+1}) ${why} <span class="m">${s.a} ${SYM[s.op]} ${s.b} = ${s.v}</span>`,
+      after:['= '+tokStr(idx<seq.length-1?seq[idx+1].tokens:[ans])]}));
+  });
+  return {type:'ex',display:tokStr(t),steps,answer:ans,ansPre:'Ответ:',answerLine:`Ответ: ${ans}`,checkLine:'',
+    quickWrong:()=>'Пока не так. Реши по шагам: так будет видно, в каком действии ошибка.'};
+}
+
+/* ---------- Текстовые задачи ---------- */
+const TASK_RULES=[{t:'Стоимость = цена · количество.',op:'*'},{t:'Путь = скорость · время.',op:'*'},{t:'«Меньше на» — вычитаем.',op:'-'},{t:'«В несколько раз меньше» — делим.',op:':'},
+  {t:'Вместе (всего) — складываем.',op:'+'},{t:'Цена = стоимость : количество.',op:':'},{t:'«Больше на» — прибавляем.',op:'+'},{t:'Осталось (потратили, убрали) — вычитаем.',op:'-'}];
+function T(statement,q,stepsSpec,answerText,answer,noQuick,short){
+  const steps=[];
+  stepsSpec.forEach((s,idx)=>{
+    const v=calc(s.a,s.op,s.b), diag=[];
+    for(const op of ['+','-','*',':']){ if(op===s.op)continue; const w=calc(s.a,op,s.b);
+      if(isNat(w)&&w!==v&&!diag.some(d=>d.v===w)) diag.push({v:w,msg:`Похоже, сделано действие «${SYM[op]}» (<span class="m">${s.a} ${SYM[op]} ${s.b}</span>), а оно здесь не подходит. ${s.cue}`});}
+    steps.push(lineStep({q:`${idx+1}) ${s.q}`,pre:`${idx+1})`,post:s.unit,value:v,diag,
+      h1:s.cue,h2:`Посчитай: <span class="m">${s.a} ${SYM[s.op]} ${s.b}</span>.`,
+      explain:`${idx+1}) ${s.q} ${s.why} <span class="m">${s.a} ${SYM[s.op]} ${s.b} = ${v}</span> (${s.unit})`,
+      after:[`<span class="small">${idx+1}) ${s.a} ${SYM[s.op]} ${s.b} = ${v}${s.unit?' ('+s.unit+')':''} — ${s.label}</span>`]}));
+  });
+  return {type:'tk',noQuick:!!noQuick,short,statement,q,steps,answer,ansPre:'Ответ:',answerLine:`Ответ: ${answerText}`,checkLine:'',
+    quickWrong:()=>'Пока не так. Реши по шагам: каждое действие проверяется отдельно.'};
+}
+function TE(statement,q,short,letText,cmp,left,right,x,answerText){
+  const eq=buildEquation(left,right,x);
+  const steps=[lineStep({q:`Составь уравнение. ${letText}`,pre:cmp.pre,post:cmp.post,value:cmp.value,diag:cmp.diag||[],h1:cmp.h1,h2:cmp.h2,
+    explain:`${letText} ${cmp.h1} Получаем уравнение: <span class="m">${eq.display}</span>.`,
+    after:[`<span class="small">${letText}</span>`,eq.display]}),...eq.steps];
+  return {type:'tk',eqTask:true,short,statement,q,steps,answer:x,ansPre:'x =',answerLine:`Ответ: ${answerText}`,checkLine:'',
+    quickWrong:eq.quickWrong};
+}
+const GEN={'Маша':'Маши','Петя':'Пети','Аня':'Ани','Миша':'Миши','Катя':'Кати','Дима':'Димы','Лена':'Лены','Саша':'Саши','Оля':'Оли','Ваня':'Вани'};
+const NAMES=[['Маша','Петя'],['Аня','Миша'],['Катя','Дима'],['Лена','Саша'],['Оля','Ваня']];
+const TK_LEVELS=[
+ {name:'Цена, количество, стоимость',ex:'ручки, тетради, покупки',gens:[
+  ()=>{const a=rnd(8,40),b=rnd(5,30),c=rnd(2,6),d=rnd(2,5),p2=a+b;
+    const R=n=>plural(n,['ручка','ручки','ручек']),B=n=>plural(n,['блокнот','блокнота','блокнотов']);
+    return T(`Ручка стоит ${a} руб., а блокнот на ${b} руб. дороже.`,`Сколько стоят ${R(c)} и ${B(d)}?`,[
+      {q:'Сколько стоит блокнот?',a,op:'+',b,unit:'руб.',label:'стоит блокнот',cue:`«На ${b} руб. дороже» значит «больше на ${b}». Чтобы найти число, которое больше на сколько-то, к нему прибавляют.`,why:'«Дороже на» значит «больше на», поэтому прибавляем.'},
+      {q:`Сколько стоят ${R(c)}?`,a,op:'*',b:c,unit:'руб.',label:'стоят ручки',cue:'Стоимость = цена · количество.',why:'Стоимость = цена · количество.'},
+      {q:`Сколько стоят ${B(d)}?`,a:p2,op:'*',b:d,unit:'руб.',label:'стоят блокноты',cue:'Стоимость = цена · количество. Цену блокнота ты уже нашла в первом действии.',why:'Стоимость = цена · количество.'},
+      {q:'Сколько стоит вся покупка?',a:a*c,op:'+',b:p2*d,unit:'руб.',label:'стоит вся покупка',cue:'Вся покупка — это ручки и блокноты вместе.',why:'Чтобы узнать, сколько всего, складываем.'}],
+      `${a*c+p2*d} руб.`,a*c+p2*d,false,{table:{head:['','Цена','Кол-во','Стоимость'],rows:[['Ручки',`${a} руб.`,`${c} шт.`,'?'],['Блокноты',`?, на ${b} руб. дороже`,`${d} шт.`,'?']]},lines:['Вся покупка — ? руб.']});},
+  ()=>{const p=rnd(8,45),k=rnd(2,9),m=pick([2,3,4,5,6,7,8,9].filter(v=>v!==k)),S=p*k;
+    return T(`За ${plural(k,['тетрадь','тетради','тетрадей'])} заплатили ${S} руб. Все тетради одинаковые.`,`Сколько стоят ${plural(m,['такая тетрадь','такие тетради','таких тетрадей'])}?`,[
+      {q:'Сколько стоит одна тетрадь?',a:S,op:':',b:k,unit:'руб.',label:'цена одной тетради',cue:'Цена = стоимость : количество.',why:'Цена = стоимость : количество.'},
+      {q:`Сколько стоят ${plural(m,['тетрадь','тетради','тетрадей'])}?`,a:p,op:'*',b:m,unit:'руб.',label:`стоят ${plural(m,['тетрадь','тетради','тетрадей'])}`,cue:'Стоимость = цена · количество.',why:'Стоимость = цена · количество.'}],
+      `${p*m} руб.`,p*m,false,{table:{head:['Цена','Кол-во','Стоимость'],rows:[['одинаковая',`${k} шт.`,`${S} руб.`],['одинаковая',`${m} шт.`,'? руб.']]}});},
+  ()=>{const p=rnd(15,60),k=rnd(2,6),money=p*k+rnd(5,100);
+    return T(`У Кати было ${money} руб. Она купила ${plural(k,['альбом','одинаковых альбома','одинаковых альбомов'])} по ${p} руб.`,`Сколько денег у неё осталось?`,[
+      {q:'Сколько стоят все альбомы?',a:p,op:'*',b:k,unit:'руб.',label:'стоят альбомы',cue:'Стоимость = цена · количество.',why:'Стоимость = цена · количество.'},
+      {q:'Сколько денег осталось?',a:money,op:'-',b:p*k,unit:'руб.',label:'осталось',cue:'Деньги потратили, значит их стало меньше.',why:'Потратили — значит вычитаем.'}],
+      `${money-p*k} руб.`,money-p*k,false,{lines:[`Было — ${money} руб.`,`Купила — ${k} альб. по ${p} руб.`,'Осталось — ? руб.']});}]},
+ {name:'Движение',ex:'скорость, время, расстояние',gens:[
+  ()=>{const v1=rnd(10,18),t1=rnd(2,4),v2=rnd(10,18),t2=rnd(1,3);
+    return T(`Велосипедист ехал ${t1} ч со скоростью ${v1} км/ч, а потом ещё ${t2} ч со скоростью ${v2} км/ч.`,'Какой путь он проехал?',[
+      {q:`Сколько километров он проехал за первые ${t1} ч?`,a:v1,op:'*',b:t1,unit:'км',label:'первая часть пути',cue:'Путь = скорость · время.',why:'Путь = скорость · время.'},
+      {q:`Сколько километров он проехал за следующие ${t2} ч?`,a:v2,op:'*',b:t2,unit:'км',label:'вторая часть пути',cue:'Путь = скорость · время.',why:'Путь = скорость · время.'},
+      {q:'Какой путь он проехал всего?',a:v1*t1,op:'+',b:v2*t2,unit:'км',label:'весь путь',cue:'Весь путь складывается из двух частей.',why:'Весь путь — это первая часть плюс вторая.'}],
+      `${v1*t1+v2*t2} км`,v1*t1+v2*t2,false,{table:{head:['','Скорость','Время','Путь'],rows:[['1-я часть',`${v1} км/ч`,`${t1} ч`,'?'],['2-я часть',`${v2} км/ч`,`${t2} ч`,'?']]},lines:['Весь путь — ? км']});},
+  ()=>{const v1=rnd(4,9)*10,v2=rnd(4,9)*10,t=rnd(2,5);
+    return T(`Из двух городов одновременно навстречу друг другу выехали два автомобиля. Скорость одного ${v1} км/ч, другого ${v2} км/ч. Они встретились через ${t} ч.`,'Какое расстояние между городами?',[
+      {q:'На сколько километров они сближаются за 1 час?',a:v1,op:'+',b:v2,unit:'км/ч',label:'скорость сближения',cue:'Когда едут навстречу, за час расстояние между ними уменьшается на то, что проехал первый, и на то, что проехал второй.',why:'При движении навстречу скорости складывают: это скорость сближения.'},
+      {q:'Какое расстояние между городами?',a:v1+v2,op:'*',b:t,unit:'км',label:'расстояние между городами',cue:'Расстояние = скорость сближения · время.',why:'Расстояние = скорость сближения · время.'}],
+      `${(v1+v2)*t} км`,(v1+v2)*t,false,{lines:[`Навстречу: → ${v1} км/ч     ${v2} км/ч ←`,`Время до встречи — ${t} ч`,'Расстояние между городами — ? км']});},
+  ()=>{const v=rnd(4,9)*10,t=rnd(2,6),S=v*t,t2=pick([2,3,4,5].filter(x=>x<t&&S%x===0&&S/x-v>=5));
+    if(!t2)return null;
+    return T(`Автобус проехал ${S} км за ${t} ч.`,`За сколько часов он проедет такой же путь, если будет ехать на ${S/t2-v} км/ч быстрее?`,[
+      {q:'С какой скоростью ехал автобус?',a:S,op:':',b:t,unit:'км/ч',label:'скорость автобуса',cue:'Скорость = расстояние : время.',why:'Скорость = расстояние : время.'},
+      {q:'Какой станет скорость?',a:v,op:'+',b:S/t2-v,unit:'км/ч',label:'новая скорость',cue:'«Быстрее на» значит скорость больше на это число.',why:'«Быстрее на» — значит прибавляем.'},
+      {q:'За сколько часов он проедет этот путь?',a:S,op:':',b:S/t2,unit:'ч',label:'нужное время',cue:'Время = расстояние : скорость.',why:'Время = расстояние : скорость.'}],
+      `за ${t2} ч`,t2,false,{table:{head:['','Скорость','Время','Путь'],rows:[['было','?',`${t} ч`,`${S} км`],['стало',`?, на ${S/t2-v} км/ч больше`,'? ч',`${S} км`]]}});}]},
+ {name:'Больше, меньше, в … раз',ex:'на сколько и во сколько раз',gens:[
+  ()=>{const k=rnd(2,6),b=rnd(4,30),a=k*b;
+    return T(`В библиотеке ${plural(a,['книга','книги','книг'])} про животных, а книг про космос в ${plural(k,['раз','раза','раз'])} меньше.`,'Сколько всего книг про животных и про космос?',[
+      {q:'Сколько книг про космос?',a,op:':',b:k,unit:'кн.',label:'книг про космос',cue:`«В ${k} раз меньше» значит разделить на ${k}.`,why:'«В несколько раз меньше» — делим.'},
+      {q:'Сколько всего книг?',a,op:'+',b,unit:'кн.',label:'всего книг',cue:'«Всего» значит вместе — сложить.',why:'Всего — значит складываем.'}],
+      plural(a+b,['книга','книги','книг']),a+b,false,{lines:[`Про животных — ${a} кн.`,`Про космос — ?, в ${k} р. меньше`,'Всего — ? кн.']});},
+  ()=>{const a=rnd(8,25),d=rnd(2,a-3),t=rnd(2,7);
+    return T(`Мастер за час делает ${plural(a,['деталь','детали','деталей'])}, а ученик на ${plural(d,['деталь','детали','деталей'])} меньше.`,`Сколько деталей они сделают вместе за ${t} ч?`,[
+      {q:'Сколько деталей за час делает ученик?',a,op:'-',b:d,unit:'дет.',label:'ученик за час',cue:`«На ${d} меньше» значит вычесть ${d}.`,why:'«Меньше на» — вычитаем.'},
+      {q:'Сколько деталей они делают вместе за час?',a,op:'+',b:a-d,unit:'дет.',label:'вместе за час',cue:'Вместе — значит сложить мастера и ученика.',why:'Вместе — складываем.'},
+      {q:`Сколько деталей они сделают за ${t} ч?`,a:2*a-d,op:'*',b:t,unit:'дет.',label:`вместе за ${t} ч`,cue:`За каждый час одно и то же количество, а часов ${t}.`,why:'Одинаково каждый час — умножаем на число часов.'}],
+      plural((2*a-d)*t,['деталь','детали','деталей']),(2*a-d)*t,false,{lines:[`Мастер — ${a} дет. за 1 ч`,`Ученик — ?, на ${d} дет. меньше`,`Вместе за ${t} ч — ? дет.`]});},
+  ()=>{const b=rnd(3,15),k=rnd(2,6),a=b*k;
+    return T(`На первой полке ${plural(a,['книга','книги','книг'])}, а на второй ${b}.`,'Во сколько раз на первой полке книг больше, чем на второй? И на сколько больше?',[
+      {q:'Во сколько раз больше?',a,op:':',b,unit:'раз',label:'во столько раз больше',cue:'Чтобы узнать, во сколько раз одно число больше другого, большее делят на меньшее.',why:'«Во сколько раз» — делим большее на меньшее.'},
+      {q:'На сколько больше?',a,op:'-',b,unit:'кн.',label:'на столько больше',cue:'Чтобы узнать, на сколько одно число больше другого, из большего вычитают меньшее.',why:'«На сколько» — вычитаем.'}],
+      `в ${plural(k,['раз','раза','раз'])} больше, на ${plural(a-b,['книгу','книги','книг'])} больше`,a-b,true,{lines:[`I полка — ${a} кн.`,`II полка — ${b} кн.`,'Во сколько раз больше? На сколько больше?']});}]},
+ {name:'Задачи на части',ex:'вместе 60, у одного в 3 раза больше',gens:[
+  ()=>{const [g,b]=pick(NAMES),m=rnd(4,25),k=rnd(2,5),Nn=m*(k+1),G=GEN[g],Bg=GEN[b];
+    return T(`У ${G} и ${Bg} вместе ${plural(Nn,['наклейка','наклейки','наклеек'])}. У ${Bg} в ${plural(k,['раз','раза','раз'])} больше наклеек, чем у ${G}.`,
+      `Сколько наклеек у ${Bg}?`,[
+      {q:`Пусть у ${G} 1 часть, тогда у ${Bg} ${plural(k,['часть','части','частей'])}. Сколько всего частей?`,a:1,op:'+',b:k,unit:'ч.',label:'всего частей',cue:`Сложи части: 1 часть у ${G} и ${plural(k,['часть','части','частей'])} у ${Bg}.`,why:'Все части вместе — складываем.'},
+      {q:'Сколько наклеек приходится на одну часть?',a:Nn,op:':',b:k+1,unit:'накл.',label:`одна часть, столько у ${G}`,cue:'Все наклейки поровну разложили на все части.',why:'Поровну на части — делим.'},
+      {q:`Сколько наклеек у ${Bg}?`,a:m,op:'*',b:k,unit:'накл.',label:`у ${Bg}`,cue:`У ${Bg} ${plural(k,['часть','части','частей'])} — возьми одну часть столько раз.`,why:'Одна часть, взятая несколько раз, — умножаем.'}],
+      plural(m*k,['наклейка','наклейки','наклеек']),m*k,false,{lines:[`${G} — ? накл.`,`${Bg} — ?, в ${k} р. больше`,`Вместе — ${Nn} накл.`]});},
+  ()=>{const a=rnd(8,40),d=rnd(2,20),Nn=2*a+d;
+    return T(`В двух корзинах ${plural(Nn,['яблоко','яблока','яблок'])}. Во второй корзине на ${plural(d,['яблоко','яблока','яблок'])} больше, чем в первой.`,'Сколько яблок в первой корзине?',[
+      {q:`Сколько яблок будет, если убрать лишние ${d} из второй корзины?`,a:Nn,op:'-',b:d,unit:'ябл.',label:'стало поровну в двух корзинах',cue:'Убираем лишние яблоки — их становится меньше. Тогда в корзинах поровну.',why:'Убрали — вычитаем.'},
+      {q:'Сколько яблок в первой корзине?',a:Nn-d,op:':',b:2,unit:'ябл.',label:'в первой корзине',cue:'Теперь в двух корзинах поровну, значит, раздели на 2.',why:'Поровну на две части — делим на 2.'}],
+      plural(a,['яблоко','яблока','яблок']),a,false,{lines:['I корзина — ? ябл.',`II корзина — ?, на ${d} ябл. больше`,`Всего — ${Nn} ябл.`]});}]},
+ {name:'Задуманное число',ex:'задумала число, умножила…',gens:[
+  ()=>{const x=rnd(2,15),k=rnd(2,9),a=rnd(3,40),b=x*k+a;
+    return T(`Я задумала число, умножила его на ${k}, потом прибавила ${a} и получила ${b}.`,'Какое число я задумала?',[
+      {q:`Каким было число до того, как прибавили ${a}?`,a:b,op:'-',b:a,unit:'',label:'было до прибавления',cue:'Идём с конца. Прибавление отменяют вычитанием.',why:'С конца: прибавляли — значит вычитаем.'},
+      {q:`Каким было число до умножения на ${k}?`,a:b-a,op:':',b:k,unit:'',label:'задуманное число',cue:'Умножение отменяют делением.',why:'С конца: умножали — значит делим.'}],
+      `${x}  (это уравнение ${k}x + ${a} = ${b})`,x,false,{lines:[`? → · ${k} → + ${a} → ${b}`]});},
+  ()=>{const x=rnd(2,12)*rnd(2,6),k=pick([2,3,4,5,6].filter(v=>x%v===0)),a=rnd(2,30);
+    if(!k)return null; const b=x/k+a;
+    return T(`Я задумала число, разделила его на ${k}, потом прибавила ${a} и получила ${b}.`,'Какое число я задумала?',[
+      {q:`Каким было число до того, как прибавили ${a}?`,a:b,op:'-',b:a,unit:'',label:'было до прибавления',cue:'Идём с конца. Прибавление отменяют вычитанием.',why:'С конца: прибавляли — значит вычитаем.'},
+      {q:`Каким было число до деления на ${k}?`,a:x/k,op:'*',b:k,unit:'',label:'задуманное число',cue:'Деление отменяют умножением.',why:'С конца: делили — значит умножаем.'}],
+      `${x}  (это уравнение x : ${k} + ${a} = ${b})`,x,false,{lines:[`? → : ${k} → + ${a} → ${b}`]});},
+  ()=>{const x=rnd(10,60),a=rnd(5,40),k=rnd(2,5),b=(x+a)*k;
+    return T(`Я задумала число, прибавила к нему ${a}, а результат умножила на ${k} и получила ${b}.`,'Какое число я задумала?',[
+      {q:`Каким было число до умножения на ${k}?`,a:b,op:':',b:k,unit:'',label:'было до умножения',cue:'Идём с конца. Умножение отменяют делением.',why:'С конца: умножали — значит делим.'},
+      {q:`Каким было число до того, как прибавили ${a}?`,a:x+a,op:'-',b:a,unit:'',label:'задуманное число',cue:'Прибавление отменяют вычитанием.',why:'С конца: прибавляли — значит вычитаем.'}],
+      `${x}  (это уравнение (x + ${a}) · ${k} = ${b})`,x,false,{lines:[`? → + ${a} → · ${k} → ${b}`]});}]},
+ {name:'Задачи на уравнение',ex:'пусть x — …, составь уравнение',gens:[
+  ()=>{const x=rnd(4,20),k=rnd(2,5),Nn=x*(k+1);
+    return TE(`В двух корзинах ${plural(Nn,['яблоко','яблока','яблок'])}. В первой корзине в ${plural(k,['раз','раза','раз'])} больше яблок, чем во второй.`,'Сколько яблок во второй корзине?',
+      {lines:[`I корзина — ?, в ${k} р. больше, чем во II`,'II корзина — ? ябл.',`Всего — ${Nn} ябл.`]},
+      `Пусть во второй корзине x яблок. Тогда в первой ${k}x яблок.`,
+      {pre:'',post:`x + x = ${Nn}`,value:k,h1:`«В ${k} раза больше» значит, что в первой корзине ${k} · x = ${k}x яблок. Вместе первая и вторая: ${k}x + x = ${Nn}.`.replace(/в 5 раза/,'в 5 раз'),h2:'Впиши, во сколько раз в первой корзине больше.'},
+      LIKE([{s:1,k},{s:1,k:1}]),Nn,x,plural(x,['яблоко','яблока','яблок']));},
+  ()=>{const x=rnd(5,30),d=rnd(3,20),Nn=2*x+d;
+    return TE(`На двух полках ${plural(Nn,['книга','книги','книг'])}. На первой полке на ${plural(d,['книгу','книги','книг'])} больше, чем на второй.`,'Сколько книг на второй полке?',
+      {lines:[`I полка — ?, на ${d} кн. больше`,'II полка — ? кн.',`Всего — ${Nn} кн.`]},
+      `Пусть на второй полке x книг. Тогда на первой (x + ${d}) книг.`,
+      {pre:'x + x + ',post:` = ${Nn}`,value:d,h1:`Складываем обе полки: на второй x, на первой x + ${d}. Получается x + x + ${d} = ${Nn}.`,h2:'Впиши, на сколько книг больше на первой полке.'},
+      OP('+',LIKE([{s:1,k:1},{s:1,k:1}]),N(d)),Nn,x,plural(x,['книга','книги','книг']));},
+  ()=>{const x=rnd(8,40),k=rnd(2,9),a=rnd(10,90),b=k*x+a;
+    return TE(`Купили ${plural(k,['тетрадь','одинаковые тетради','одинаковых тетрадей'])} и ручку за ${a} руб. За всю покупку заплатили ${b} руб.`,'Сколько стоит одна тетрадь?',
+      {table:{head:['','Цена','Кол-во','Стоимость'],rows:[['Тетради','? руб.',`${k} шт.`,'?'],['Ручка','',`1 шт.`,`${a} руб.`]]},lines:[`Вся покупка — ${b} руб.`]},
+      `Пусть одна тетрадь стоит x руб. Тогда ${k} тетрадей стоят ${k}x руб.`,
+      {pre:'',post:`x + ${a} = ${b}`,value:k,h1:`Стоимость = цена · количество: x · ${k} = ${k}x. Тетради и ручка вместе: ${k}x + ${a} = ${b}.`,h2:'Впиши, сколько купили тетрадей.'},
+      OP('+',KX(k),N(a)),b,x,`${x} руб.`);},
+  ()=>{const x=rnd(4,25),k=rnd(3,6),D=(k-1)*x;
+    return TE(`У Пети в ${plural(k,['раз','раза','раз'])} больше марок, чем у Коли. У Коли на ${plural(D,['марку','марки','марок'])} меньше, чем у Пети.`,'Сколько марок у Коли?',
+      {lines:['Коля — ? марок',`Петя — ?, в ${k} р. больше`,`Разница — ${D} марок`]},
+      `Пусть у Коли x марок. Тогда у Пети ${k}x марок.`,
+      {pre:'',post:`x − x = ${D}`,value:k,h1:`Чтобы узнать, на сколько у Пети больше, из большего вычитаем меньшее: ${k}x − x = ${D}.`,h2:'Впиши, во сколько раз у Пети больше марок.'},
+      LIKE([{s:1,k},{s:-1,k:1}]),D,x,plural(x,['марка','марки','марок']));},
+  ()=>{const x=rnd(3,15),k=rnd(2,9),a=rnd(2,k*x-1),b=k*x-a;
+    return TE(`Я задумала число, умножила его на ${k}, потом вычла ${a} и получила ${b}.`,'Какое число я задумала?',
+      {lines:[`? → · ${k} → − ${a} → ${b}`]},
+      `Пусть задуманное число — x. Умножили на ${k}: получилось ${k}x.`,
+      {pre:`${k}x − `,post:` = ${b}`,value:a,h1:`Записываем по порядку, что делали с числом: умножили на ${k} (${k}x), потом вычли ${a}: ${k}x − ${a} = ${b}.`,h2:'Впиши, сколько вычли.'},
+      OP('-',KX(k),N(a)),b,x,String(x));},
+  ()=>{const x=rnd(3,6),t=rnd(2,5),d=rnd(10,80),S=x*t+d;
+    return TE(`Турист шёл ${t} ч с одинаковой скоростью, а потом проехал на автобусе ещё ${d} км. Всего он преодолел ${S} км.`,'С какой скоростью шёл турист?',
+      {table:{head:['','Скорость','Время','Путь'],rows:[['Пешком','? км/ч',`${t} ч`,'?'],['Автобус','','',`${d} км`]]},lines:[`Всего — ${S} км`]},
+      `Пусть скорость туриста x км/ч. Тогда пешком он прошёл ${t}x км.`,
+      {pre:'',post:`x + ${d} = ${S}`,value:t,h1:`Путь = скорость · время: x · ${t} = ${t}x. Пешком и на автобусе вместе: ${t}x + ${d} = ${S}.`,h2:'Впиши, сколько часов шёл турист.'},
+      OP('+',KX(t),N(d)),S,x,`${x} км/ч`);}]},
+ {name:'Вперемешку',ex:'все виды задач',mix:true}
+];
+function genTask(li,src){
+  let real=src?src.li:li, lv=TK_LEVELS[real];
+  if(!src&&lv.mix){real=rnd(0,TK_LEVELS.length-2);lv=TK_LEVELS[real];}
+  for(let t=0;t<200;t++){const gi=src?src.gi:rnd(0,lv.gens.length-1);const p=lv.gens[gi]();if(p){p.src={li:real,gi};return p;}}
+  throw new Error('task fail');
+}
+
+const SECTIONS={
+  eq:{levels:EQ_LEVELS,gen:genEquation,label:'Уравнение',rules:[
+    'Сначала упрости левую часть: <span class="m">6x − x = 5x</span>. Буква x без числа — это 1x.',
+    'Потом смотри, что неизвестно: слагаемое, уменьшаемое, вычитаемое, множитель, делимое или делитель.',
+    ...Object.entries(ROLE).map(([k,v])=>v.rule),
+    'В конце сделай проверку: подставь ответ вместо x. Левая часть должна стать равна правой.']},
+  ex:{levels:EX_LEVELS,gen:genExample,label:'Пример',rules:[
+    'Сначала выполняют действия в скобках.',
+    'Потом умножение и деление по порядку слева направо.',
+    'Потом сложение и вычитание по порядку слева направо.',
+    'Подсказка: над каждым знаком можно надписать номер действия карандашом.']},
+  tk:{levels:TK_LEVELS,gen:genTask,label:'Задача',rules:[
+    'Путь = скорость · время. Скорость = путь : время. Время = путь : скорость.',
+    'Стоимость = цена · количество. Цена = стоимость : количество.',
+    '«На … больше» — прибавляем, «на … меньше» — вычитаем.',
+    '«В … раз больше» — умножаем, «в … раз меньше» — делим.',
+    '«На сколько больше?» — вычитаем. «Во сколько раз больше?» — делим.',
+    'При движении навстречу скорости складывают (скорость сближения).',
+    'Ответ записывают полностью, с единицами измерения.',
+    'Сначала краткая запись: что известно и что найти (знак «?»). Для цены и движения удобна таблица.',
+    'Задача с уравнением: «Пусть x — то, что надо найти». Остальное выражаем через x и составляем уравнение.']}
+};
+</script>
+
+<script>
+/* ================= ИНТЕРФЕЙС ================= */
+(function(){
+if(typeof document==='undefined')return;
+const $=id=>document.getElementById(id);
+const QUICK_NEED=3, ROUND=5, FAST_MS=2500;
+let store={tab:'eq',lvl:{eq:0,ex:0,tk:0},done:{},stars:{},stepClean:{},score:0,streak:0,best:0,full:2,fedAt:Date.now(),fedTotal:0};
+try{const s=JSON.parse(localStorage.getItem('mathkletka')||'null');if(s)store=Object.assign(store,s);}catch(e){}
+const save=()=>{try{localStorage.setItem('mathkletka',JSON.stringify(store));}catch(e){}};
+if(store.food===undefined)store.food=store.score||0;
+const HUNGER_MS=6*3600*1000;
+const fullNow=()=>Math.max(0,(store.full||0)-Math.floor((Date.now()-(store.fedAt||Date.now()))/HUNGER_MS));
+let P=null, S={mode:'steps'}, round={res:[]}, retry=[], summary=false;
+const key=()=>store.tab+store.lvl[store.tab];
+const quickOpen=()=>(store.stepClean[key()]||0)>=QUICK_NEED;
+const cooling=()=>Date.now()<S.cool;
+
+const owl=$('owl');
+function say(text,mood){ $('say').innerHTML=text; owl.classList.remove('hop','shake'); void owl.getBoundingClientRect(); if(mood)owl.classList.add(mood); }
+const PRAISE=['Мур! Всё правильно! +1 корм ★','Вот это да, без единой ошибки! Мяу!','Умница! Теперь есть чем меня покормить ★','Отлично! Мрр, ещё корм ★','Супер! Ты настоящий математик! Мяу!'];
+const KIND=['Мяу, не страшно! Ошибки помогают учиться.','Ничего, давай разберёмся вместе. Мрр.','Почти! Прочитай подсказку внизу.','Попробуй ещё раз, у тебя получится! Мур.'];
+const STEPOK=['Верно!','Правильно!','Так держать!','Молодец!','Точно!'];
+const FAST='Мяу! Стоп-стоп, не спеши! Ответ за пару секунд — это угадывание. Запиши этот шаг в тетрадь и подумай.';
+const PICK_QUIZ={
+  paren:{q:'Что выполняют первым?',options:[{t:'действия в скобках',c:true},{t:'умножение и деление'},{t:'то, что стоит левее'}]},
+  paren2:{q:'Если скобок несколько, с каких начинают?',options:[{t:'с тех, что левее (или с внутренних)',c:true},{t:'с правых'},{t:'с тех, где числа больше'}]},
+  prio:{q:'Что выполняют раньше?',options:[{t:'умножение и деление',c:true},{t:'сложение и вычитание'},{t:'то, что стоит левее'}]},
+  ltr:{q:'Действия одной ступени (только + и −, или только · и :) выполняют…',options:[{t:'по порядку слева направо',c:true},{t:'справа налево'},{t:'сначала то, что проще'}]}
+};
+function pickType(t,c,k){const [s,e]=group(t),hasP=t.includes('('),hi=o=>o==='*'||o===':';
+  if(hasP&&(c<s||c>e))return depthAt(t,c)>0?'paren2':'paren';
+  if(!hi(t[c])&&hi(t[k]))return 'prio'; return 'ltr';}
+
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=$('confetti'),x=c.getContext('2d'),W=c.width=innerWidth,H=c.height=innerHeight;
+  const cs=getComputedStyle(document.documentElement);
+  const cols=['--c-eq','--c-ex','--c-tk','--gold','--green'].map(v=>cs.getPropertyValue(v).trim()||'#e0a100');
+  const ps=Array.from({length:90},()=>({x:W/2+(Math.random()-.5)*80,y:H*.35,vx:(Math.random()-.5)*9,vy:-Math.random()*9-3,r:Math.random()*6+3,c:pick(cols),a:Math.random()*6}));
+  let f=0;(function tick(){x.clearRect(0,0,W,H);ps.forEach(p=>{p.vy+=.25;p.x+=p.vx;p.y+=p.vy;p.a+=.2;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);x.restore();});
+    if(++f<110)requestAnimationFrame(tick);else x.clearRect(0,0,W,H);})();
+}
+function renderBowl(){
+  const f=fullNow(); $('full').innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<f?'':'off'}">🐟</span>`).join('');
+  $('food').textContent=store.food; $('feed').classList.toggle('empty',store.food<1);
+  const fat=1+Math.min(.25,(store.fedTotal||0)*.01); $('catBody').setAttribute('transform',`translate(50 75) scale(${fat} 1) translate(-50 -75)`);
+}
+function feed(){
+  const f=fullNow();
+  if(f>=5){ say('Мрр, я сыт! Оставь корм на потом.','hop'); return; }
+  if(store.food<1){ say('Корма пока нет. Реши задание без ошибок — получишь ★.','shake'); return; }
+  store.food--; store.full=f+1; store.fedAt=Date.now(); store.fedTotal=(store.fedTotal||0)+1; save();
+  const b=$('feed').getBoundingClientRect(), o=owl.getBoundingClientRect(), y=document.createElement('div');
+  y.className='yum'; y.textContent='🐟'; y.style.left=b.left+'px'; y.style.top=b.top+'px'; document.body.appendChild(y);
+  requestAnimationFrame(()=>{y.style.transform=`translate(${o.left+o.width/2-b.left-16}px,${o.top+o.height*.5-b.top}px) scale(.5)`;y.style.opacity='0';});
+  setTimeout(()=>y.remove(),800);
+  say(store.full>=5?'Ням-ням! Я наелся, мррр! Спасибо!':pick(['Ням-ням! Мррр!','Вкусно! Ещё хочу!','Мяу, спасибо! Мурр-мурр.','Ням! Ты лучшая хозяйка!']),'hop');
+  renderBowl();
+}
+function newProblem(){
+  if(round.res.length>=ROUND){summary=true;S={mode:S.mode};render();return;}
+  summary=false;
+  const sec=SECTIONS[store.tab]; let src=null,isRetry=false;
+  retry.forEach(r=>{if(r.tab===store.tab)r.due--;});
+  const ri=retry.findIndex(r=>r.tab===store.tab&&r.due<=0);
+  if(ri>=0){src=retry[ri].src;retry.splice(ri,1);isRetry=true;}
+  try{P=sec.gen(store.lvl[store.tab],src);}catch(e){P=sec.gen(store.lvl[store.tab]);isRetry=false;}
+  P.isRetry=isRetry;
+  const prev=S.mode;
+  S={i:0,tries:0,hintN:0,lines:[],fb:null,clean:true,mode:(prev==='quick'&&!P.noQuick&&quickOpen())?'quick':'steps',finished:false,showSol:false,
+     wrongOpts:[],quiz:null,pendingQuiz:null,stepErr:false,t0:Date.now(),cool:0};
+  if(isRetry) say('Помнишь, в похожем задании была ошибка? Давай решим такое ещё раз — теперь точно получится!');
+  render();
+}
+function renderTabs(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===store.tab)));
+  const sec=SECTIONS[store.tab];
+  $('topics').innerHTML=sec.levels.map((l,i)=>{const d=store.done[store.tab+i]||0;
+    const st=store.stars[store.tab+i]||0, w=Math.min(100,st*20);
+    return `<button class="topic" type="button" data-l="${i}" aria-pressed="${i===store.lvl[store.tab]}"><b>${esc(l.name)}</b><span>${esc(l.ex)}</span>
+      <small>${st>=5?'<span class="medal">🏅 Медаль!</span> ':''}${d?'★ '+st+' · решено '+d:'&nbsp;'}</small><div class="bar"><i style="width:${w}%"></i></div></button>`;}).join('');
+  $('rulesBody').innerHTML='<ul>'+sec.rules.map(r=>`<li>${r}</li>`).join('')+'</ul>';
+  $('streak').textContent=store.streak; $('best').textContent=store.best;
+  document.body.dataset.sec=store.tab;
+  renderBowl();
+}
+const fbHtml=()=>S.fb?`<div class="fb ${S.fb.cls}">${S.fb.html}</div>`:'';
+function dotsHtml(){return `<div class="dots" aria-label="Раунд: решено ${round.res.length} из ${ROUND}">`+Array.from({length:ROUND},(_,i)=>{const r=round.res[i];
+  return `<i class="${r===undefined?(i===round.res.length&&!summary?'cur':''):r?'ok':'meh'}"></i>`;}).join('')+`</div>`;}
+function head(){
+  const sec=SECTIONS[store.tab], lv=sec.levels[store.lvl[store.tab]], lock=!quickOpen();
+  const left=QUICK_NEED-(store.stepClean[key()]||0);
+  return `<div class="task-head"><span class="lbl">${sec.label} · ${esc(lv.name)}</span>${dotsHtml()}</div>
+   ${P.isRetry?'<span class="tag">Повторяем задание с ошибкой</span>':''}
+   <div class="mode" role="group" aria-label="Как решать" ${P.noQuick?'hidden':''}><button type="button" data-mode="steps" aria-pressed="${S.mode==='steps'}">По шагам</button><button type="button" data-mode="quick" class="${lock?'locked':''}" aria-pressed="${S.mode==='quick'}" title="${lock?'Откроется после '+left+' решений по шагам без ошибок':''}">${lock?'🔒 ':''}Сразу ответ</button></div>`;
+}
+function problemHtml(){
+  if(P.type==='tk') return `<div class="statement">${esc(P.statement)}<span class="q">${esc(P.q)}</span></div>`+
+    (P.short?`<details class="short" id="shortbox" ${S.shortOpen?'open':''}><summary>Краткая запись <small>(сначала попробуй записать сама)</small></summary>${shortHtml(P.short)}</details>`:'');
+  return `<div class="problem">${esc(P.display)}${P.type==='ex'?' = ?':''}</div>`;
+}
+function shortHtml(sh){
+  let h='';
+  if(sh.table) h+=`<div class="kzwrap"><table class="kz"><thead><tr>${sh.table.head.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${sh.table.rows.map(r=>`<tr>${r.map((c,i)=>i===0&&sh.table.head[0]===''?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  if(sh.lines) h+=`<div class="kzlines">${sh.lines.map(l=>`<div>${esc(l)}</div>`).join('')}</div>`;
+  return h;
+}
+const notebookHtml=()=>`<div class="notebook">${S.lines.map(l=>`<div>${l}</div>`).join('')}</div>`;
+function submitBtn(){const c=cooling();return `<button class="btn" type="submit" ${c?'disabled':''}>${c?'Подумай…':'Проверить'}</button>`;}
+function stepHtml(st){
+  return `<div class="step"><div class="prompt">${st.q}</div>
+   <form class="inrow" id="numform"><span>${st.pre}</span><input id="ans" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="впиши число" class="${S.fb&&S.fb.cls==='bad'?'bad':''}"><span>${st.post||''}</span>${submitBtn()}</form>${fbHtml()}<div class="note">✍️ Каждую строчку переписывай в тетрадь.</div></div>`;
+}
+const quickHtml=()=>`<div class="step"><div class="prompt">Реши в тетради и введи ответ:</div>
+  <form class="inrow" id="quickform"><span>${P.ansPre}</span><input id="ans" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="ответ">${submitBtn()}</form>${fbHtml()}</div>`;
+function solutionHtml(){
+  const items=P.steps.filter(s=>s.explain).map(s=>`<li>${s.explain}</li>`).join('');
+  const lines=[]; P.steps.forEach(s=>lines.push(...s.after));
+  return `<div class="fb hint solution ${P.type}"><b>Разбор решения</b>${P.short?`<div><b>Краткая запись:</b>${shortHtml(P.short)}</div>`:''}<ol>${items}</ol>
+   <div class="lines">${P.type==='tk'?'':esc(P.display)+'<br>'}${lines.join('<br>')}</div>
+   <div><b>${esc(P.answerLine)}</b></div></div>`;
+}
+function doneHtml(){
+  const last=round.res.length>=ROUND;
+  return `<div class="done"><div class="notebook"><div class="ans">${esc(P.answerLine)}</div>${S.mode==='quick'&&P.checkLine?`<div class="chk">${esc(P.checkLine)}</div>`:''}</div>
+   <div class="cheer">${S.clean?'★ +1 корм для Жира':'Решено!'}</div>
+   <button class="btn" type="button" id="next">${last?'Итоги раунда':'Следующее '+(P.type==='tk'?'задание':P.type==='ex'?'пример':'уравнение')}</button></div>`;
+}
+function summaryHtml(){const ok=round.res.filter(Boolean).length;
+  return `<div class="task-head"><span class="lbl">Итоги раунда</span>${dotsHtml()}</div>
+   <div class="done"><div class="cheer">Раунд пройден! ★ ${ok} из ${ROUND} без ошибок</div>
+   <div class="fb hint"><b>Передышка 1–2 минуты.</b> Встань, потянись, попрыгай 10 раз или попей воды. Мозгу нужен отдых, чтобы всё запомнилось. Потом можно начать новый раунд.</div>
+   <button class="btn" type="button" id="newround">Начать новый раунд</button></div>`;}
+function render(){
+  renderTabs();
+  if(summary){$('card').innerHTML=summaryHtml();return;}
+  let h=head()+problemHtml();
+  if(S.mode==='steps'){ h+=notebookHtml(); h+=S.finished?doneHtml():stepHtml(P.steps[S.i]); }
+  else h+=S.finished?doneHtml():quickHtml();
+  if(S.showSol) h+=solutionHtml();
+  if(!S.finished) h+=`<div class="actions"><button class="btn ghost" type="button" id="hint">Подсказка</button><button class="btn ghost" type="button" id="sol">${S.showSol?'Скрыть разбор':'Разбор решения'}</button><button class="btn ghost" type="button" id="skip">Другое</button></div>`;
+  $('card').innerHTML=h;
+  const inp=$('ans'); if(inp&&!S.noFocus&&!cooling()) inp.focus({preventScroll:true});
+  S.noFocus=false;
+}
+function finish(){
+  S.finished=true; const k=key();
+  store.done[k]=(store.done[k]||0)+1; round.res.push(S.clean);
+  if(S.clean){
+    store.score++; store.stars[k]=(store.stars[k]||0)+1; store.streak++; store.best=Math.max(store.best,store.streak);
+    let justOpened=false;
+    if(S.mode==='steps'){store.stepClean[k]=(store.stepClean[k]||0)+1; justOpened=store.stepClean[k]===QUICK_NEED&&!P.noQuick;}
+    store.food=(store.food||0)+1;
+    const st=store.stars[k];
+    say(justOpened?`Ты решила по шагам ${QUICK_NEED} раза без ошибок! Теперь в этой теме открыт режим «Сразу ответ».`
+      :st===5?'Ого! 5 решений без ошибок в этой теме — у тебя медаль! 🏅 И +1 корм ★'
+      :store.streak>=3&&store.streak%3===0?`${store.streak} подряд без ошибок! Мяу! +1 корм ★`:pick(PRAISE),'hop');
+    confetti();
+  }else{
+    store.streak=0; if(P.src) retry.push({tab:store.tab,src:P.src,due:3});
+    say('Решено! Похожее задание вернётся чуть позже. Корм ★ дают за решение без ошибок — в следующий раз получится! Мяу.','hop');
+  }
+  save();
+}
+function advance(st,fb){
+  S.lines.push(...st.after); S.i++; S.tries=0; S.hintN=0; S.t0=Date.now();
+  if(S.i>=P.steps.length) finish();
+  S.fb=fb||null; render(); S.fb=null;
+}
+function mistake(){
+  S.clean=false; const dt=Date.now()-S.t0; S.t0=Date.now();
+  if(dt<FAST_MS){ S.cool=Date.now()+3000; say(FAST,'shake'); setTimeout(()=>{S.noFocus=false;render();},3050); }
+  else say(pick(KIND),'shake');
+}
+function onNum(v){ const st=P.steps[S.i];
+  if(v===st.value){ if(S.tries===0&&S.i<P.steps.length-1)say(pick(STEPOK)); return advance(st,{cls:'good',html:pick(STEPOK)}); }
+  S.tries++; mistake();
+  if(S.tries>=3) return advance(st,{cls:'hint',html:`Правильно: <b class="m">${st.value}</b>. ${st.explain}`});
+  const d=st.diag.find(x=>x.v===v);
+  let msg=d?d.msg:(Math.abs(v-st.value)===1||Math.abs(v-st.value)===10?'Совсем близко! Пересчитай ещё раз.':'Пока не так.');
+  const h=d?(S.tries===1?'':st.h2):(S.tries===1?st.h1:st.h2); S.hintN=Math.max(S.hintN||0,S.tries);
+  S.fb={cls:'bad',html:`${msg}${h?`<span class="rule">${h}</span>`:''}`}; render(); }
+function onQuick(v){
+  if(v===P.answer){ finish(); S.fb=null; render(); return; }
+  mistake(); S.fb={cls:'bad',html:P.quickWrong(v)}; render(); }
+
+$('card').addEventListener('click',e=>{
+  const t=e.target.closest('button'); if(!t)return;
+  if(t.dataset.mode){
+    if(t.dataset.mode==='quick'&&!quickOpen()){const left=QUICK_NEED-(store.stepClean[key()]||0);
+      say(`«Сразу ответ» откроется, когда решишь в этой теме по шагам без ошибок ещё ${left} ${left===1?'раз':'раза'}. Шаги — как разминка у спортсменов!`,'shake');return;}
+    if(S.mode!==t.dataset.mode){S.mode=t.dataset.mode;S.fb=null;S.noFocus=true;render();} return; }
+  if(t.id==='next'||t.id==='skip') return newProblem();
+  if(t.id==='newround'){ round={res:[]}; return newProblem(); }
+  if(t.id==='sol'){ S.showSol=!S.showSol; if(S.showSol){S.clean=false;say('Смотри разбор внимательно и перепиши решение в тетрадь. Похожее задание потом вернётся.');} S.noFocus=true; render(); return; }
+  if(t.id==='hint'){ S.noFocus=true;
+    const st=P.steps[S.i]; S.hintN=(S.hintN||0)+1;
+    const html=S.mode==='quick'?'Нажми «По шагам» — там подсказка к каждому шагу.':(S.hintN===1?st.h1:st.h1+'<span class="rule">'+st.h2+'</span>');
+    S.fb={cls:'hint',html}; render(); return; }
+});
+$('card').addEventListener('toggle',e=>{if(e.target.id==='shortbox')S.shortOpen=e.target.open;},true);
+$('card').addEventListener('submit',e=>{
+  e.preventDefault(); if(cooling())return;
+  const raw=($('ans').value||'').trim().replace(/\s/g,'');
+  if(!/^\d+$/.test(raw)){ S.fb={cls:'hint',html:'Введи ответ цифрами, например 12.'}; render(); return; }
+  const v=parseInt(raw,10);
+  if(e.target.id==='quickform') onQuick(v); else onNum(v);
+});
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;store.tab=b.dataset.tab;save();newProblem();});
+$('topics').addEventListener('click',e=>{const b=e.target.closest('.topic');if(!b)return;store.lvl[store.tab]=+b.dataset.l;save();newProblem();
+  const c=document.querySelector('.card');if(c.getBoundingClientRect().top>innerHeight*.6)c.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});});
+$('feed').addEventListener('click',feed);
+let resetArm=false;
+$('reset').addEventListener('click',e=>{ if(!resetArm){resetArm=true;e.target.textContent='Точно сбросить? Нажми ещё раз';setTimeout(()=>{resetArm=false;e.target.textContent='Сбросить счёт';},4000);return;}
+  store.done={};store.stars={};store.stepClean={};store.food=0;store.full=2;store.fedAt=Date.now();store.fedTotal=0;store.score=0;store.streak=0;store.best=0;save();round={res:[]};resetArm=false;e.target.textContent='Сбросить счёт';newProblem();});
+
+
+newProblem();
+if(fullNow()<=1) say(store.food>0?'Мяу! Я проголодался. У тебя есть корм — покорми меня, а потом порешаем!':'Мяу! Я проголодался. Реши задание без ошибок — и покорми меня!');
+})();
+</script>
+</body>
+</html>

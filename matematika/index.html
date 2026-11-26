@@ -209,6 +209,7 @@ details.rules ul{padding-left:1.1em;margin:8px 0 0;display:flex;flex-direction:c
 details.rules .m{font-family:var(--f-math);color:var(--pen)}
 .foot{color:var(--ink-soft);font-size:.82rem;text-align:center}
 .foot button{background:none;border:0;color:var(--ink-soft);text-decoration:underline;font:inherit;cursor:pointer}
+.coin{display:inline-block;width:1em;height:1em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a3,#f2b632 55%,#c98a10);box-shadow:inset 0 0 0 .09em #b07a0c;vertical-align:-.15em;font-style:normal}
 </style>
 </head>
 <body>
@@ -240,7 +241,7 @@ details.rules .m{font-family:var(--f-math);color:var(--pen)}
     </div>
     <div class="stats">
       <span class="chip"><span class="star">★</span> Корм: <span id="food">0</span></span>
-      <span class="chip">🪙 Монетки: <span id="coins">0</span></span>
+      <span class="chip"><i class="coin"></i> Монетки: <span id="coins">0</span></span>
       <span class="chip">Подряд: <span id="streak">0</span></span>
       <span class="chip">Рекорд: <span id="best">0</span></span>
     </div>
@@ -256,7 +257,7 @@ details.rules .m{font-family:var(--f-math);color:var(--pen)}
     <div class="shop" id="shop"></div>
     <h3 class="shoph">Обмен у мамы</h3>
     <div class="cash" id="cash"></div>
-    <p class="note">🪙 Монетки: +2 за то, что покормила голодного Жира, +3 за пройденный раунд из 5 заданий, +10 за медаль в теме.</p>
+    <p class="note"><i class="coin"></i> Монетки: +2 за то, что покормила голодного Жира, +3 за пройденный раунд из 5 заданий, +10 за медаль в теме.</p>
   </section>
   <div id="study">
   <div class="tabs" role="tablist" id="tabs">
@@ -818,7 +819,7 @@ function feed(){
   y.className='yum'; y.textContent='🐟'; y.style.left=b.left+'px'; y.style.top=b.top+'px'; document.body.appendChild(y);
   requestAnimationFrame(()=>{y.style.transform=`translate(${o.left+o.width/2-b.left-16}px,${o.top+o.height*.5-b.top}px) scale(.5)`;y.style.opacity='0';});
   setTimeout(()=>y.remove(),800);
-  say((store.full>=5?'Ням-ням! Я наелся, мррр! Спасибо!':pick(['Ням-ням! Мррр!','Вкусно! Ещё хочу!','Мяу, спасибо! Мурр-мурр.','Ням! Ты лучшая хозяйка!']))+' +2 🪙','hop');
+  say((store.full>=5?'Ням-ням! Я наелся, мррр! Спасибо!':pick(['Ням-ням! Мррр!','Вкусно! Ещё хочу!','Мяу, спасибо! Мурр-мурр.','Ням! Ты лучшая хозяйка!']))+' +2 <i class="coin"></i>','hop');
   renderBowl();
 }
 const SHOP=[
@@ -863,22 +864,22 @@ function renderRoom(){
     if(own&&it.kind==='wear') btn=`<button class="btn" type="button" data-wear="${it.id}">${store.wearing[it.id]?'Снять':'Надеть'}</button>`;
     else if(own) btn=`<span class="gotit">Есть ✓ Нажми на неё в комнате</span>`;
     else btn=`<button class="btn ${lack>0?'no':''}" type="button" data-buy="${it.id}">Купить</button>`;
-    return `<div class="item ${own?'own':''}"><b>${it.name}</b><small>${it.desc}</small>${own?'':`<span class="price">🪙 ${it.price}${lack>0?` · не хватает ${lack}`:''}</span>`}${btn}</div>`;}).join('');
+    return `<div class="item ${own?'own':''}"><b>${it.name}</b><small>${it.desc}</small>${own?'':`<span class="price"><i class="coin"></i> ${it.price}${lack>0?` · не хватает ${lack}`:''}</span>`}${btn}</div>`;}).join('');
   $('coins').textContent=store.coins;
   renderCash();
 }
 const CASH=[100,150,200];
 function renderCash(){
   let h='';
-  if(cashAsk) h+=`<div class="cashq">Обменять ${cashAsk} 🪙 на ${cashAsk} ₽ у мамы? <button class="btn" type="button" data-cashyes="${cashAsk}">Да, обменять</button><button class="btn ghost" type="button" data-cashno="1">Нет</button></div>`;
-  else if(store.coins<100) h+=`<p class="note">Накопи 100 🪙 — и сможешь обменять их у мамы на настоящие деньги: 100, 150 или 200 ₽. Сейчас у тебя ${store.coins} 🪙, осталось ${100-store.coins}.</p>`;
-  else h+=`<div class="cashbtns">${CASH.map(a=>`<button class="btn ${store.coins<a?'no':''}" type="button" data-cash="${a}">${a} 🪙 → ${a} ₽</button>`).join('')}</div>`;
+  if(cashAsk) h+=`<div class="cashq">Обменять ${cashAsk} <i class="coin"></i> на ${cashAsk} ₽ у мамы? <button class="btn" type="button" data-cashyes="${cashAsk}">Да, обменять</button><button class="btn ghost" type="button" data-cashno="1">Нет</button></div>`;
+  else if(store.coins<100) h+=`<p class="note">Накопи 100 <i class="coin"></i> — и сможешь обменять их у мамы на настоящие деньги: 100, 150 или 200 ₽. Сейчас у тебя ${store.coins} <i class="coin"></i>, осталось ${100-store.coins}.</p>`;
+  else h+=`<div class="cashbtns">${CASH.map(a=>`<button class="btn ${store.coins<a?'no':''}" type="button" data-cash="${a}">${a} <i class="coin"></i> → ${a} ₽</button>`).join('')}</div>`;
   h+=store.vouchers.slice().reverse().slice(0,5).map(v=>`<div class="voucher ${v.paid?'paid':''}"><b class="big">Чек №${v.n}: ${v.amt} ₽</b><span>${v.date} · ${v.paid?'Мама выдала ✓':'Покажи этот чек маме'}</span>
     ${v.paid?'':`<button class="btn ghost" type="button" data-paid="${v.n}">Мама выдала деньги</button>`}</div>`).join('');
   $('cash').innerHTML=h;
 }
 $('cash').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.cash){const a=+b.dataset.cash; if(store.coins<a){rsay(`Для ${a} ₽ нужно ${a} 🪙, а у тебя ${store.coins}. Ещё чуть-чуть!`);return;} cashAsk=a; renderCash(); return;}
+  if(b.dataset.cash){const a=+b.dataset.cash; if(store.coins<a){rsay(`Для ${a} ₽ нужно ${a} <i class="coin"></i>, а у тебя ${store.coins}. Ещё чуть-чуть!`);return;} cashAsk=a; renderCash(); return;}
   if(b.dataset.cashno){cashAsk=0;renderCash();return;}
   if(b.dataset.cashyes){const a=+b.dataset.cashyes; if(store.coins<a){cashAsk=0;renderCash();return;}
     store.coins-=a; const n=store.vouchers.length+1; const d=new Date();
@@ -904,7 +905,7 @@ $('scene').addEventListener('click',e=>{const g=e.target.closest('[data-item]');
 $('shop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.wear){const id=b.dataset.wear;store.wearing[id]=!store.wearing[id];save();renderRoom();rsay(store.wearing[id]?'Красиво? Мне очень идёт!':'Ладно, сниму.');return;}
   const it=SHOP.find(x=>x.id===b.dataset.buy); if(!it)return;
-  if(store.coins<it.price){rsay(`Не хватает ${it.price-store.coins} 🪙. Покорми меня или пройди раунд заданий — и накопишь!`);return;}
+  if(store.coins<it.price){rsay(`Не хватает ${it.price-store.coins} <i class="coin"></i>. Покорми меня или пройди раунд заданий — и накопишь!`);return;}
   store.coins-=it.price; if(it.kind==='food')store.smet++; else store.own[it.id]=true; if(it.kind==='wear')store.wearing[it.id]=true; save(); renderRoom(); confetti();
   rsay(it.kind==='food'?'Сметанка! Мяу! Дай мне её, когда проголодаюсь.':it.kind==='wear'?`Ура! ${it.name}! Мне очень идёт!`:`Ура! ${it.name}! Нажми на неё, и я поиграю!`);});
 $('givesmet').addEventListener('click',()=>{if(store.smet<1)return;
@@ -981,7 +982,7 @@ function doneHtml(){
 }
 function summaryHtml(){const ok=round.res.filter(Boolean).length;
   return `<div class="task-head"><span class="lbl">Итоги раунда</span>${dotsHtml()}</div>
-   <div class="done"><div class="cheer">Раунд пройден! ★ ${ok} из ${ROUND} без ошибок · +3 🪙</div>
+   <div class="done"><div class="cheer">Раунд пройден! ★ ${ok} из ${ROUND} без ошибок · +3 <i class="coin"></i></div>
    <div class="fb hint"><b>Передышка 1–2 минуты.</b> Встань, потянись, попрыгай 10 раз или попей воды. Мозгу нужен отдых, чтобы всё запомнилось. Потом можно начать новый раунд.</div>
    <button class="btn" type="button" id="newround">Начать новый раунд</button></div>`;}
 function render(){
@@ -1006,7 +1007,7 @@ function finish(){
     store.food=(store.food||0)+1;
     const st=store.stars[k]; if(st===5)store.coins=(store.coins||0)+10;
     say(justOpened?`Ты решила по шагам ${QUICK_NEED} раза без ошибок! Теперь в этой теме открыт режим «Сразу ответ».`
-      :st===5?'Ого! 5 решений без ошибок в этой теме — у тебя медаль! 🏅 +10 🪙'
+      :st===5?'Ого! 5 решений без ошибок в этой теме — у тебя медаль! 🏅 +10 <i class="coin"></i>'
       :store.streak>=3&&store.streak%3===0?`${store.streak} подряд без ошибок! Мяу! +1 корм ★`:pick(PRAISE),'hop');
     confetti();
   }else{

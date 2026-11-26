@@ -11,6 +11,7 @@
 <style>
 /* Layout: one column like a school notebook page: topic picker on top, the "тетрадь" card with the current problem below. */
 :root{
+  --room-wall:#fdf1e4; --room-floor:#e7cfae; --room-line:#d9bd96;
   --paper:#fbfcff; --grid:#dfe7f3; --ink:#1f2a44; --ink-soft:#5b6782;
   --pen:#2350c8; --pen-soft:#e7eefc; --red:#d4352b; --red-soft:#fdecea;
   --green:#18875a; --green-soft:#e3f5ec; --amber:#a86500; --amber-soft:#fff3dc;
@@ -21,6 +22,7 @@
   --f-math:"Rubik","Nunito",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --room-wall:#2a2f45; --room-floor:#4a3d33; --room-line:#5d4c3f;
   --paper:#131826; --grid:#1d2436; --ink:#e7ecf7; --ink-soft:#9aa6c0;
   --pen:#8fb0ff; --pen-soft:#1f2b4d; --red:#ff8a80; --red-soft:#3a1f22;
   --green:#5fd3a0; --green-soft:#16332a; --amber:#ffc46b; --amber-soft:#3a2d16;
@@ -28,6 +30,7 @@
   --gold:#ffd04d; --cat-fur:#fffaf3; --cat-point:#e2c4a2; --cat-ear:#f3d6c8; --cat-eye:#6cbcf2; --cat-nose:#e9a3a0; --cat-line:#8a7462;
   --card:#192033; --line:#2b3550; --margin:#7a3b3b; color-scheme:dark}}
 :root[data-theme="dark"]{
+  --room-wall:#2a2f45; --room-floor:#4a3d33; --room-line:#5d4c3f;
   --paper:#131826; --grid:#1d2436; --ink:#e7ecf7; --ink-soft:#9aa6c0;
   --pen:#8fb0ff; --pen-soft:#1f2b4d; --red:#ff8a80; --red-soft:#3a1f22;
   --green:#5fd3a0; --green-soft:#16332a; --amber:#ffc46b; --amber-soft:#3a2d16;
@@ -83,6 +86,45 @@ table.kz tbody th{text-align:left;font-weight:600}
 .mode{align-self:flex-start}
 .mode button.locked{opacity:.65}
 .btn:disabled{opacity:.55;cursor:wait}
+.btn.roombtn{padding:7px 12px;font-size:.9rem;background:var(--pen-soft);color:var(--pen);border:1.5px solid var(--pen)}
+body.inroom .hero,body.inroom .bowl{display:none}
+#room{display:flex;flex-direction:column;gap:12px}
+#room[hidden]{display:none}
+.roomhead{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.roomhead .lbl{font-family:var(--f-math);font-size:1.2rem;font-weight:700}
+.bubble.rb{margin:0}
+.scene{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+.scene svg{display:block;width:100%;height:auto}
+.scene [data-item]{cursor:pointer}
+#rcat{transition:transform .7s ease}
+#rcatIn{transform-box:fill-box;transform-origin:50% 90%}
+#rcatIn.hop{animation:hop .6s ease}
+#rcatIn.scr{animation:scr .14s 8 alternate ease-in-out}
+@keyframes scr{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}
+#rball{transition:transform .8s cubic-bezier(.3,.7,.4,1)}
+#rmouse{transform-box:fill-box;transform-origin:50% 0}
+#rmouse.swing{animation:swing .5s 3 alternate ease-in-out}
+@keyframes swing{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+#zz{font:700 20px var(--f-math);fill:var(--pen)}
+@media (prefers-reduced-motion:reduce){#rcat,#rball{transition:none}#rcatIn.hop,#rcatIn.scr,#rmouse.swing{animation:none}}
+.smet{display:flex;align-items:center;gap:10px;font-weight:700}
+.cash{display:flex;flex-direction:column;gap:8px}
+.cashbtns{display:flex;gap:8px;flex-wrap:wrap}
+.cashbtns .btn.no{opacity:.45}
+.voucher{border:2px dashed var(--amber);background:var(--amber-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.voucher b.big{font-family:var(--f-math);font-size:1.4rem}
+.voucher.paid{border-color:var(--green);background:var(--green-soft);opacity:.8}
+.cashq{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-weight:700}
+.shoph{font-family:var(--f-math);margin:4px 0 0;font-size:1.2rem}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.item{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.item b{font-size:.98rem}
+.item small{color:var(--ink-soft);font-size:.82rem}
+.item .price{font-weight:800;color:var(--amber)}
+.item .btn{padding:7px 10px;font-size:.88rem;margin-top:auto}
+.item .btn.no{opacity:.5}
+.item.own{border-color:var(--green)}
+.gotit{color:var(--green);font-size:.82rem;font-weight:700;margin-top:auto}
 .bowl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:.92rem}
 .fish{letter-spacing:2px;font-size:1.05rem}
 .fish .off{opacity:.22;filter:grayscale(1)}
@@ -191,17 +233,32 @@ details.rules .m{font-family:var(--f-math);color:var(--pen)}
         <path d="M47.3 48 L52.7 48 L50 51.2 Z" fill="var(--cat-nose)"/>
         <path d="M50 51 Q48.5 54 46 53 M50 51 Q51.5 54 54 53" stroke="var(--cat-line)" stroke-width="1" fill="none" stroke-linecap="round"/>
         <path d="M44 50 L29 47 M44 52.5 L30 55 M56 50 L71 47 M56 52.5 L70 55" stroke="var(--cat-line)" stroke-width=".8" opacity=".55" stroke-linecap="round"/>
+        <g class="acc-collar" hidden><path d="M37 60 Q50 68 63 60" stroke="#d4352b" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="50" cy="67" r="2.8" fill="#e0a100" stroke="#8a6a00" stroke-width=".6"/></g>
+        <g class="acc-bow" hidden><path d="M27 19 L20 13 L20 25 Z M27 19 L34 13 L34 25 Z" fill="#f06ba8" stroke="#b8457a" stroke-width=".6"/><circle cx="27" cy="19" r="2.2" fill="#d94b91"/></g>
       </svg>
       <div class="bubble" id="say">Мяу! Я Жир. Решай задания, а за каждое решение без ошибок получишь корм ★ — покорми меня!</div>
     </div>
     <div class="stats">
       <span class="chip"><span class="star">★</span> Корм: <span id="food">0</span></span>
+      <span class="chip">🪙 Монетки: <span id="coins">0</span></span>
       <span class="chip">Подряд: <span id="streak">0</span></span>
       <span class="chip">Рекорд: <span id="best">0</span></span>
     </div>
-    <div class="bowl"><span>Сытость Жира:</span><span class="fish" id="full" aria-label="сытость"></span><button class="btn feed" type="button" id="feed">Покормить 🐟 ★1</button></div>
+    <div class="bowl"><span>Сытость Жира:</span><span class="fish" id="full" aria-label="сытость"></span><button class="btn feed" type="button" id="feed">Покормить 🐟 ★1</button><button class="btn roombtn" type="button" id="openroom">🏠 Комната Жира</button></div>
   </header>
 
+  <section id="room" hidden>
+    <div class="roomhead"><button class="btn ghost" type="button" id="closeroom">← К заданиям</button><span class="lbl">Комната Жира</span></div>
+    <div class="bubble rb" id="rsay">Мяу! Это моя комната. Купи мне что-нибудь в магазине, и я буду с этим играть. Нажимай на вещи!</div>
+    <div class="scene"><svg id="scene" viewBox="0 0 360 230" role="img" aria-label="Комната Жира"></svg></div>
+    <div class="smet" id="smetrow" hidden><button class="btn" type="button" id="givesmet">Дать сметанку</button><span id="smetn"></span></div>
+    <h3 class="shoph">Магазин</h3>
+    <div class="shop" id="shop"></div>
+    <h3 class="shoph">Обмен у мамы</h3>
+    <div class="cash" id="cash"></div>
+    <p class="note">🪙 Монетки: +2 за то, что покормила голодного Жира, +3 за пройденный раунд из 5 заданий, +10 за медаль в теме.</p>
+  </section>
+  <div id="study">
   <div class="tabs" role="tablist" id="tabs">
     <button role="tab" data-tab="eq" id="tab-eq">Уравнения</button>
     <button role="tab" data-tab="ex" id="tab-ex">Примеры</button>
@@ -215,6 +272,7 @@ details.rules .m{font-family:var(--f-math);color:var(--pen)}
   </section>
 
   <details class="rules" id="rules"><summary>Шпаргалка: правила</summary><div id="rulesBody"></div></details>
+  </div>
 
   <canvas id="confetti" aria-hidden="true"></canvas>
   <p class="foot">Задания каждый раз новые. За каждое решение без ошибок и без разбора — корм ★ для Жира. 5 решений без ошибок в теме — медаль. Жир потихоньку голодает: заходи порешать, чтобы покормить. <button id="reset" type="button">Сбросить счёт</button></p>
@@ -748,21 +806,110 @@ function confetti(){
 }
 function renderBowl(){
   const f=fullNow(); $('full').innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<f?'':'off'}">🐟</span>`).join('');
-  $('food').textContent=store.food; $('feed').classList.toggle('empty',store.food<1);
+  $('food').textContent=store.food; $('coins').textContent=store.coins||0; applyWearing&&applyWearing(); $('feed').classList.toggle('empty',store.food<1);
   const fat=1+Math.min(.25,(store.fedTotal||0)*.01); $('catBody').setAttribute('transform',`translate(50 75) scale(${fat} 1) translate(-50 -75)`);
 }
 function feed(){
   const f=fullNow();
   if(f>=5){ say('Мрр, я сыт! Оставь корм на потом.','hop'); return; }
   if(store.food<1){ say('Корма пока нет. Реши задание без ошибок — получишь ★.','shake'); return; }
-  store.food--; store.full=f+1; store.fedAt=Date.now(); store.fedTotal=(store.fedTotal||0)+1; save();
+  store.food--; store.full=f+1; store.fedAt=Date.now(); store.fedTotal=(store.fedTotal||0)+1; store.coins=(store.coins||0)+2; save();
   const b=$('feed').getBoundingClientRect(), o=owl.getBoundingClientRect(), y=document.createElement('div');
   y.className='yum'; y.textContent='🐟'; y.style.left=b.left+'px'; y.style.top=b.top+'px'; document.body.appendChild(y);
   requestAnimationFrame(()=>{y.style.transform=`translate(${o.left+o.width/2-b.left-16}px,${o.top+o.height*.5-b.top}px) scale(.5)`;y.style.opacity='0';});
   setTimeout(()=>y.remove(),800);
-  say(store.full>=5?'Ням-ням! Я наелся, мррр! Спасибо!':pick(['Ням-ням! Мррр!','Вкусно! Ещё хочу!','Мяу, спасибо! Мурр-мурр.','Ням! Ты лучшая хозяйка!']),'hop');
+  say((store.full>=5?'Ням-ням! Я наелся, мррр! Спасибо!':pick(['Ням-ням! Мррр!','Вкусно! Ещё хочу!','Мяу, спасибо! Мурр-мурр.','Ням! Ты лучшая хозяйка!']))+' +2 🪙','hop');
   renderBowl();
 }
+const SHOP=[
+ {id:'bow',name:'Бантик',price:6,kind:'wear',desc:'Носит на ушке'},
+ {id:'smetana',name:'Сметанка',price:8,kind:'food',desc:'Сразу наедается: все 5 рыбок'},
+ {id:'ball',name:'Мячик',price:10,kind:'toy',desc:'Гоняет по комнате'},
+ {id:'mouse',name:'Мышка на верёвочке',price:12,kind:'toy',desc:'Ловит прыжком'},
+ {id:'scratch',name:'Когтеточка',price:15,kind:'toy',desc:'Точит когти'},
+ {id:'collar',name:'Ошейник с колокольчиком',price:18,kind:'wear',desc:'Дзинь-дзинь!'},
+ {id:'bed',name:'Лежанка',price:20,kind:'toy',desc:'Спит, свернувшись'},
+ {id:'box',name:'Домик-коробка',price:25,kind:'toy',desc:'Прячется — торчат только уши'}];
+store.vouchers=store.vouchers||[]; let cashAsk=0;
+store.coins=store.coins||0; store.own=store.own||{}; store.wearing=store.wearing||{}; store.smet=store.smet||0;
+const rsay=t=>{$('rsay').innerHTML=t;};
+function applyWearing(){document.querySelectorAll('.acc-collar').forEach(g=>g.toggleAttribute('hidden',!(store.own.collar&&store.wearing.collar)));
+  document.querySelectorAll('.acc-bow').forEach(g=>g.toggleAttribute('hidden',!(store.own.bow&&store.wearing.bow)));}
+let catPos=[150,95], hidden=false;
+function moveCat(x,y){catPos=[x,y];$('rcat').style.transform=`translate(${x}px,${y}px)`;}
+function catAnim(c){const g=$('rcatIn');g.classList.remove('hop','scr');void g.getBoundingClientRect();g.classList.add(c);}
+function renderRoom(){
+  const o=store.own, catSvg=owl.innerHTML.replace(/id="catBody"/,'id="catBody2"');
+  $('scene').innerHTML=`
+   <rect width="360" height="160" fill="var(--room-wall)"/><rect y="160" width="360" height="70" fill="var(--room-floor)"/>
+   <path d="M0 160 H360" stroke="var(--room-line)" stroke-width="3"/>
+   <g opacity=".9"><rect x="210" y="22" width="70" height="56" rx="4" fill="#bfe3ff" stroke="var(--room-line)" stroke-width="4"/><path d="M245 22 V78 M210 50 H280" stroke="var(--room-line)" stroke-width="3"/></g>
+   <ellipse cx="320" cy="214" rx="22" ry="7" fill="#9aa6c0"/><path d="M300 210 Q320 200 340 210" stroke="#7d89a3" stroke-width="3" fill="none"/>
+   ${o.scratch?`<g data-item="scratch"><rect x="14" y="208" width="62" height="12" rx="3" fill="#a77b52"/><rect x="36" y="80" width="18" height="130" fill="#e6cfa6"/>
+     ${Array.from({length:12},(_,i)=>`<path d="M36 ${88+i*10} L54 ${84+i*10}" stroke="#c4a473" stroke-width="2"/>`).join('')}<rect x="20" y="70" width="50" height="12" rx="4" fill="#a77b52"/></g>`:''}
+   ${o.mouse?`<g data-item="mouse"><path d="M96 0 V12" stroke="#8a7462" stroke-width="3"/><g id="rmouse"><path d="M96 12 V96" stroke="#8a7462" stroke-width="1.5"/>
+     <ellipse cx="96" cy="104" rx="8" ry="11" fill="#a3a9b5"/><circle cx="90" cy="96" r="3.5" fill="#c3c8d2"/><circle cx="102" cy="96" r="3.5" fill="#c3c8d2"/><circle cx="96" cy="113" r="1.5" fill="#e9a3a0"/></g></g>`:''}
+   ${o.bed?`<g data-item="bed"><ellipse cx="132" cy="206" rx="50" ry="15" fill="#c98b8b"/><ellipse cx="132" cy="203" rx="40" ry="9" fill="#f2c9c9"/></g>`:''}
+   ${o.box?`<g data-item="box"><rect x="262" y="148" width="74" height="64" fill="#c49a6c" stroke="#8f6b45" stroke-width="2"/><path d="M262 148 L250 132 L300 132 L299 148 Z M336 148 L348 132 L300 132 L299 148 Z" fill="#d8b285" stroke="#8f6b45" stroke-width="2"/>
+     <g id="boxears" hidden><path d="M282 148 L286 128 L296 146 Z M316 148 L312 128 L302 146 Z" fill="#e2c4a2" stroke="#8a7462" stroke-width="1.2"/></g></g>`:''}
+   <g id="rcat" style="transform:translate(${catPos[0]}px,${catPos[1]}px)"><g id="rcatIn"><svg width="110" height="110" viewBox="0 0 100 100">${catSvg}</svg></g></g>
+   ${o.ball?`<g data-item="ball" id="rball"><circle cx="230" cy="214" r="10" fill="#e5534b"/><path d="M220 214 Q230 206 240 214" stroke="#fff" stroke-width="2" fill="none"/></g>`:''}
+   <text id="zz" x="0" y="0" visibility="hidden">Z z z</text>`;
+  if(hidden&&o.box){$('rcat').setAttribute('visibility','hidden');$('boxears').removeAttribute('hidden');}
+  applyWearing();
+  $('smetrow').hidden=!(store.smet>0); $('smetn').textContent=store.smet?`Есть: ${store.smet}`:'';
+  $('shop').innerHTML=SHOP.map(it=>{const own=it.kind!=='food'&&store.own[it.id], lack=it.price-store.coins;
+    let btn;
+    if(own&&it.kind==='wear') btn=`<button class="btn" type="button" data-wear="${it.id}">${store.wearing[it.id]?'Снять':'Надеть'}</button>`;
+    else if(own) btn=`<span class="gotit">Есть ✓ Нажми на неё в комнате</span>`;
+    else btn=`<button class="btn ${lack>0?'no':''}" type="button" data-buy="${it.id}">Купить</button>`;
+    return `<div class="item ${own?'own':''}"><b>${it.name}</b><small>${it.desc}</small>${own?'':`<span class="price">🪙 ${it.price}${lack>0?` · не хватает ${lack}`:''}</span>`}${btn}</div>`;}).join('');
+  $('coins').textContent=store.coins;
+  renderCash();
+}
+const CASH=[100,150,200];
+function renderCash(){
+  let h='';
+  if(cashAsk) h+=`<div class="cashq">Обменять ${cashAsk} 🪙 на ${cashAsk} ₽ у мамы? <button class="btn" type="button" data-cashyes="${cashAsk}">Да, обменять</button><button class="btn ghost" type="button" data-cashno="1">Нет</button></div>`;
+  else if(store.coins<100) h+=`<p class="note">Накопи 100 🪙 — и сможешь обменять их у мамы на настоящие деньги: 100, 150 или 200 ₽. Сейчас у тебя ${store.coins} 🪙, осталось ${100-store.coins}.</p>`;
+  else h+=`<div class="cashbtns">${CASH.map(a=>`<button class="btn ${store.coins<a?'no':''}" type="button" data-cash="${a}">${a} 🪙 → ${a} ₽</button>`).join('')}</div>`;
+  h+=store.vouchers.slice().reverse().slice(0,5).map(v=>`<div class="voucher ${v.paid?'paid':''}"><b class="big">Чек №${v.n}: ${v.amt} ₽</b><span>${v.date} · ${v.paid?'Мама выдала ✓':'Покажи этот чек маме'}</span>
+    ${v.paid?'':`<button class="btn ghost" type="button" data-paid="${v.n}">Мама выдала деньги</button>`}</div>`).join('');
+  $('cash').innerHTML=h;
+}
+$('cash').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.cash){const a=+b.dataset.cash; if(store.coins<a){rsay(`Для ${a} ₽ нужно ${a} 🪙, а у тебя ${store.coins}. Ещё чуть-чуть!`);return;} cashAsk=a; renderCash(); return;}
+  if(b.dataset.cashno){cashAsk=0;renderCash();return;}
+  if(b.dataset.cashyes){const a=+b.dataset.cashyes; if(store.coins<a){cashAsk=0;renderCash();return;}
+    store.coins-=a; const n=store.vouchers.length+1; const d=new Date();
+    store.vouchers.push({n,amt:a,date:d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),paid:false});
+    cashAsk=0; save(); renderRoom(); confetti(); rsay(`Ого! Чек №${n} на ${a} ₽. Покажи его маме! Мяу!`); return;}
+  if(b.dataset.paid){const v=store.vouchers.find(x=>x.n===+b.dataset.paid); if(v){v.paid=true;save();renderCash();rsay('Ура! Копи дальше, мур!');}}
+});
+function play(id){
+  const zz=$('zz'); zz.setAttribute('visibility','hidden');
+  if(hidden&&id!=='box'){hidden=false;$('rcat').removeAttribute('visibility');$('boxears')&&$('boxears').setAttribute('hidden','');}
+  if(id==='scratch'){moveCat(52,100);setTimeout(()=>catAnim('scr'),650);rsay(pick(['Шкряб-шкряб! Когти острые!','Ммм, как приятно точить когти!','Шкряб! Теперь диван в безопасности 😼']));}
+  else if(id==='ball'){const b=$('rball');const dx=pick([-150,-90,-40]);b.style.transform=`translate(${dx}px,0)`;moveCat(165+dx,102);setTimeout(()=>{catAnim('hop');b.style.transform='translate(0,0)';},800);rsay(pick(['Мячик! Догоню!','Поймал! Мрр!','Ещё, ещё кидай!']));}
+  else if(id==='mouse'){const m=$('rmouse');m.classList.remove('swing');void m.getBoundingClientRect();m.classList.add('swing');moveCat(48,92);setTimeout(()=>catAnim('hop'),700);rsay(pick(['Мышка! Сейчас поймаю!','Хоп! Почти достал!','Пи-пи? Это моя мышка!']));}
+  else if(id==='bed'){moveCat(78,118);setTimeout(()=>{zz.setAttribute('x',150);zz.setAttribute('y',130);zz.setAttribute('visibility','visible');},700);rsay(pick(['Мрр… сплю. Не буди, пока не решишь пример 😴','Какая мягкая лежанка… Zzz','Посплю немножко…']));}
+  else if(id==='box'){if(!hidden){moveCat(245,95);setTimeout(()=>{hidden=true;$('rcat').setAttribute('visibility','hidden');$('boxears').removeAttribute('hidden');},700);rsay('Меня тут нет! Видны только уши? Не может быть!');}
+    else{hidden=false;$('boxears').setAttribute('hidden','');$('rcat').removeAttribute('visibility');moveCat(170,95);catAnim('hop');rsay('Бу! Испугалась? Мяу!');}}
+}
+function openRoom(on){$('room').hidden=!on;$('study').hidden=on;document.body.classList.toggle('inroom',on);if(on){renderRoom();window.scrollTo({top:0});}else{renderBowl();}}
+$('openroom').addEventListener('click',()=>openRoom(true));
+$('closeroom').addEventListener('click',()=>openRoom(false));
+$('scene').addEventListener('click',e=>{const g=e.target.closest('[data-item]');if(g)return play(g.dataset.item);
+  if(e.target.closest('#rcat')){catAnim('hop');rsay(store.own.collar&&store.wearing.collar?'Дзинь-дзинь! Мур!':pick(['Мур-мур!','Мяу! Почеши за ушком.','Мрр, я тебя люблю!']));}});
+$('shop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.wear){const id=b.dataset.wear;store.wearing[id]=!store.wearing[id];save();renderRoom();rsay(store.wearing[id]?'Красиво? Мне очень идёт!':'Ладно, сниму.');return;}
+  const it=SHOP.find(x=>x.id===b.dataset.buy); if(!it)return;
+  if(store.coins<it.price){rsay(`Не хватает ${it.price-store.coins} 🪙. Покорми меня или пройди раунд заданий — и накопишь!`);return;}
+  store.coins-=it.price; if(it.kind==='food')store.smet++; else store.own[it.id]=true; if(it.kind==='wear')store.wearing[it.id]=true; save(); renderRoom(); confetti();
+  rsay(it.kind==='food'?'Сметанка! Мяу! Дай мне её, когда проголодаюсь.':it.kind==='wear'?`Ура! ${it.name}! Мне очень идёт!`:`Ура! ${it.name}! Нажми на неё, и я поиграю!`);});
+$('givesmet').addEventListener('click',()=>{if(store.smet<1)return;
+  if(fullNow()>=5){rsay('Мрр, я и так сыт. Оставь сметанку на потом.');return;}
+  store.smet--;store.full=5;store.fedAt=Date.now();save();renderRoom();catAnim('hop');rsay('Сметанка! Ням-ням-ням! Я сыт на 5 рыбок!');});
 function newProblem(){
   if(round.res.length>=ROUND){summary=true;S={mode:S.mode};render();return;}
   summary=false;
@@ -834,7 +981,7 @@ function doneHtml(){
 }
 function summaryHtml(){const ok=round.res.filter(Boolean).length;
   return `<div class="task-head"><span class="lbl">Итоги раунда</span>${dotsHtml()}</div>
-   <div class="done"><div class="cheer">Раунд пройден! ★ ${ok} из ${ROUND} без ошибок</div>
+   <div class="done"><div class="cheer">Раунд пройден! ★ ${ok} из ${ROUND} без ошибок · +3 🪙</div>
    <div class="fb hint"><b>Передышка 1–2 минуты.</b> Встань, потянись, попрыгай 10 раз или попей воды. Мозгу нужен отдых, чтобы всё запомнилось. Потом можно начать новый раунд.</div>
    <button class="btn" type="button" id="newround">Начать новый раунд</button></div>`;}
 function render(){
@@ -857,15 +1004,16 @@ function finish(){
     let justOpened=false;
     if(S.mode==='steps'){store.stepClean[k]=(store.stepClean[k]||0)+1; justOpened=store.stepClean[k]===QUICK_NEED&&!P.noQuick;}
     store.food=(store.food||0)+1;
-    const st=store.stars[k];
+    const st=store.stars[k]; if(st===5)store.coins=(store.coins||0)+10;
     say(justOpened?`Ты решила по шагам ${QUICK_NEED} раза без ошибок! Теперь в этой теме открыт режим «Сразу ответ».`
-      :st===5?'Ого! 5 решений без ошибок в этой теме — у тебя медаль! 🏅 И +1 корм ★'
+      :st===5?'Ого! 5 решений без ошибок в этой теме — у тебя медаль! 🏅 +10 🪙'
       :store.streak>=3&&store.streak%3===0?`${store.streak} подряд без ошибок! Мяу! +1 корм ★`:pick(PRAISE),'hop');
     confetti();
   }else{
     store.streak=0; if(P.src) retry.push({tab:store.tab,src:P.src,due:3});
     say('Решено! Похожее задание вернётся чуть позже. Корм ★ дают за решение без ошибок — в следующий раз получится! Мяу.','hop');
   }
+  if(round.res.length===ROUND){store.coins=(store.coins||0)+3;}
   save();
 }
 function advance(st,fb){
@@ -918,7 +1066,7 @@ $('topics').addEventListener('click',e=>{const b=e.target.closest('.topic');if(!
 $('feed').addEventListener('click',feed);
 let resetArm=false;
 $('reset').addEventListener('click',e=>{ if(!resetArm){resetArm=true;e.target.textContent='Точно сбросить? Нажми ещё раз';setTimeout(()=>{resetArm=false;e.target.textContent='Сбросить счёт';},4000);return;}
-  store.done={};store.stars={};store.stepClean={};store.food=0;store.full=2;store.fedAt=Date.now();store.fedTotal=0;store.score=0;store.streak=0;store.best=0;save();round={res:[]};resetArm=false;e.target.textContent='Сбросить счёт';newProblem();});
+  store.done={};store.stars={};store.stepClean={};store.food=0;store.coins=0;store.vouchers=[];store.own={};store.wearing={};store.smet=0;store.full=2;store.fedAt=Date.now();store.fedTotal=0;store.score=0;store.streak=0;store.best=0;save();round={res:[]};resetArm=false;e.target.textContent='Сбросить счёт';newProblem();});
 
 
 newProblem();
